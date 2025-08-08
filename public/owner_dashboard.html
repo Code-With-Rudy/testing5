@@ -480,6 +480,36 @@
             display: block;
         }
 
+        /* Notification Container */
+        #notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .notification {
+            background: white;
+            color: #333;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid #28a745;
+            opacity: 0;
+            transform: translateX(100%);
+            animation: slideIn 0.5s forwards;
+        }
+
+        @keyframes slideIn {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .container {
@@ -524,6 +554,7 @@
     </style>
 </head>
 <body>
+    <div id="notification-container"></div>
     <div class="container">
         <!-- Header Section -->
         <div class="header">
@@ -637,6 +668,7 @@
         let currentOwnerId = localStorage.getItem('ownerId');
         let currentTickets = [];
         let debugMode = false;
+        let lastKnownTicketCount = 0;
 
         // Check if owner is logged in
         if (!currentOwnerId) {
@@ -950,9 +982,61 @@
             window.location.href = '/index.html';
         }
 
+        // --- PUSH NOTIFICATION FUNCTIONS ---
+
+        function requestNotificationPermission() {
+            if (!("Notification" in window)) {
+                console.log("This browser does not support desktop notification");
+            } else if (Notification.permission === "granted") {
+                console.log("Notification permission already granted.");
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        console.log("Notification permission granted.");
+                        showNotification("Notifications Enabled!", "You will now receive updates for new tickets.");
+                    }
+                });
+            }
+        }
+
+        function showNotification(title, body) {
+            if (Notification.permission === "granted") {
+                const notification = new Notification(title, {
+                    body: body,
+                    icon: '/favicon.ico' // Optional: Add an icon
+                });
+                playNotificationSound();
+            }
+        }
+        
+        function playNotificationSound() {
+            const audio = new Audio('/preview.mp3');
+            audio.play();
+        }
+
+        async function checkForNewTickets() {
+            if (!currentOwnerId) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/get-owner-tickets/${currentOwnerId}`);
+                const tickets = await response.json();
+                
+                if (Array.isArray(tickets)) {
+                    if (lastKnownTicketCount > 0 && tickets.length > lastKnownTicketCount) {
+                        const newTicket = tickets[0]; // Assuming newest is first
+                        showNotification("🎫 New Ticket Purchased!", `Passenger: ${newTicket.userName}\nFare: ₹${newTicket.farePaid}`);
+                    }
+                    lastKnownTicketCount = tickets.length;
+                }
+            } catch (error) {
+                console.error("Error checking for new tickets:", error);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             if (currentOwnerId) {
                 console.log('🚀 Initializing owner dashboard...');
+                requestNotificationPermission(); // Request permission on load
                 try {
                     await loadOwnerData();
                     await loadAnalytics();
@@ -964,12 +1048,13 @@
                     setInterval(() => {
                         console.log('Auto-refreshing data...');
                         loadAnalytics();
+                        checkForNewTickets(); // Check for new tickets
                         const activeTab = document.querySelector('.tab-button.active');
                         if (activeTab) {
                             const status = activeTab.getAttribute('onclick').match(/'(.*?)'/)[1];
                             showTickets(status);
                         }
-                    }, 120000);
+                    }, 30000); // Check every 30 seconds
                 } catch (error) {
                     console.error("Dashboard initialization failed:", error);
                     document.getElementById('ticketsDisplay').innerHTML = `<div class="error-message">Dashboard failed to load: ${error.message}</div>`;
