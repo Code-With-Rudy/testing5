@@ -9,15 +9,16 @@ import uuid
 from datetime import datetime, timedelta, timezone
 import pytz
 import os
+import json # Import the json library
 
 # --- Firebase Initialization ---
 try:
     # Use environment variables for the service account key in production
-    # The key is stored as a JSON string in the environment variable
-    service_account_info = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
-    if service_account_info:
-        # The service account info is a string, so it needs to be evaluated as a dictionary
-        cred = credentials.Certificate(eval(service_account_info))
+    service_account_info_str = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
+    if service_account_info_str:
+        # Use json.loads() for safe and reliable parsing of the JSON string
+        service_account_info = json.loads(service_account_info_str)
+        cred = credentials.Certificate(service_account_info)
     else:
         # Fallback for local development using a file
         cred = credentials.Certificate("serviceAccountKey.json")
@@ -33,6 +34,11 @@ except Exception as e:
 
 app = Flask(__name__)
 CORS(app)
+
+# --- API ROOT ---
+@app.route("/api")
+def api_root():
+    return jsonify({"message": "Welcome to the Cholo Pay API!"})
 
 # --- USER REGISTRATION ---
 @app.route("/api/register/user", methods=['POST'])
