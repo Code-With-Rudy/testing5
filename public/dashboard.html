@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard - Cholo Pay</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2em;
+            font-weight: 300;
+        }
+
+        .header-info {
+            text-align: right;
+        }
+
+        .wallet-balance {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .user-name {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .card h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        /* Current Ticket Styles */
+        .ticket-card {
+            border: 2px solid #ddd;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ticket-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+        }
+
+        .ticket-card.valid {
+            border-color: #4CAF50;
+            background: linear-gradient(135deg, #f0f8ff 0%, #e8f5e8 100%);
+        }
+
+        .ticket-card.expired {
+            border-color: #f44336;
+            background: linear-gradient(135deg, #fff0f0 0%, #ffe8e8 100%);
+        }
+
+        .ticket-card.expired::before {
+            background: linear-gradient(90deg, #f44336, #d32f2f);
+        }
+
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .ticket-id {
+            background: #f8f9fa;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .ticket-status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .ticket-status.valid {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .ticket-status.expired {
+            background: #f44336;
+            color: white;
+        }
+
+        .ticket-details p {
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .time-remaining {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #4CAF50;
+            text-align: center;
+            padding: 10px;
+            background: rgba(76, 175, 80, 0.1);
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        .time-remaining.expired {
+            color: #f44336;
+            background: rgba(244, 67, 54, 0.1);
+        }
+
+        /* Fare Display Styles */
+        .fare-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .fare-input-group input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .fare-input-group input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+        }
+
+        .fare-display {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 15px 0;
+            border: 2px solid #2196F3;
+        }
+
+        .fare-amount {
+            font-size: 2em;
+            font-weight: bold;
+            color: #1976D2;
+            margin: 10px 0;
+        }
+
+        /* Filter Buttons */
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .filter-buttons button {
+            padding: 8px 16px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .filter-buttons button.active {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        .filter-buttons button:hover {
+            border-color: #4CAF50;
+            color: #4CAF50;
+        }
+
+        .filter-buttons button.active:hover {
+            color: white;
+        }
+
+        /* History Styles */
+        .history-item {
+            border-left: 4px solid #ddd;
+            padding: 15px;
+            margin: 15px 0;
+            background: linear-gradient(135deg, #f9f9f9 0%, #ffffff 100%);
+            border-radius: 0 10px 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .history-item.valid {
+            border-left-color: #4CAF50;
+            background: linear-gradient(135deg, #f0f8ff 0%, #e8f5e8 100%);
+        }
+
+        .history-item.expired {
+            border-left-color: #f44336;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffebee 100%);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .history-details {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .history-details p {
+            margin: 5px 0;
+        }
+
+        /* Wallet Section */
+        .wallet-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .fund-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+
+            .header-info {
+                text-align: center;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .fare-input-group,
+            .wallet-actions {
+                flex-direction: column;
+            }
+
+            .filter-buttons {
+                justify-content: center;
+            }
+        }
+
+        /* Loading and Error States */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .loading::after {
+            content: '';
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #f44336;
+            margin: 15px 0;
+        }
+
+        .success-message {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+            margin: 15px 0;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .empty-state h4 {
+            margin-bottom: 10px;
+            color: #999;
+        }
+
+        /* Logout Button */
+        .logout-btn {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header">
+            <div>
+                <h1>🚌 Cholo Pay Dashboard</h1>
+                <p>Welcome to your transport payment hub</p>
+            </div>
+            <div class="header-info">
+                <div class="wallet-balance">₹<span id="walletBalance">0</span></div>
+                <div class="user-name" id="userName">Loading...</div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Current Valid Ticket Section -->
+            <div class="card">
+                <h3>🎫 Current Ticket</h3>
+                <div id="currentTicket" class="ticket-card" style="display: none;">
+                    <div class="ticket-header">
+                        <span class="ticket-id"></span>
+                        <span class="ticket-status"></span>
+                    </div>
+                    <div class="ticket-details">
+                        <p><strong>Vehicle ID:</strong> <span class="vehicle-id"></span></p>
+                        <p><strong>Fare Paid:</strong> ₹<span class="fare-paid"></span></p>
+                        <p><strong>Expires At:</strong> <span class="expires-at"></span></p>
+                    </div>
+                    <div class="time-remaining"></div>
+                </div>
+                <div id="noCurrentTicket" class="empty-state">
+                    <h4>No Active Ticket</h4>
+                    <p>Purchase a ticket to see it here</p>
+                </div>
+            </div>
+
+            <!-- Fare Check and Payment Section -->
+            <div class="card">
+                <h3>💳 Buy Ticket</h3>
+                <div class="fare-input-group">
+                    <input type="text" id="vehicleInput" placeholder="Enter Vehicle ID (e.g., BUS001)">
+                    <button class="btn btn-secondary" onclick="checkFare()">Check Fare</button>
+                </div>
+                
+                <div id="fareDisplay" class="fare-display" style="display: none;">
+                    <p><strong>Fare Information</strong></p>
+                    <div class="fare-amount">₹<span id="fareAmount">0</span></div>
+                    <p>Validity: <span id="validityMinutes">30</span> minutes</p>
+                    <button class="btn" onclick="makePayment()">Pay Now</button>
+                </div>
+                
+                <div id="fareError" class="error-message" style="display: none;"></div>
+                <div id="paymentSuccess" class="success-message" style="display: none;"></div>
+            </div>
+
+            <!-- Wallet Management Section -->
+            <div class="card">
+                <h3>💰 Wallet Management</h3>
+                <p style="margin-bottom: 15px;">Current Balance: <strong>₹<span id="currentBalance">0</span></strong></p>
+                
+                <div class="wallet-actions">
+                    <input type="number" class="fund-input" id="fundAmount" placeholder="Enter amount to add" min="1">
+                    <button class="btn" onclick="addFunds()">Add Funds</button>
+                </div>
+                
+                <div id="walletMessage" style="margin-top: 15px;"></div>
+            </div>
+        </div>
+
+        <!-- Ticket History Section -->
+        <div class="card">
+            <h3>📋 Ticket History</h3>
+            <div class="filter-buttons">
+                <button class="active" onclick="filterTickets('all', event)">All Tickets</button>
+                <button onclick="filterTickets('valid', event)">Valid</button>
+                <button onclick="filterTickets('expired', event)">Expired</button>
+            </div>
+            <div id="ticketHistory">
+                <div class="loading">Loading tickets...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = '/api';
+        let currentUserId = localStorage.getItem('userId');
+        let selectedVehicleId = '';
+        let currentFare = 0;
+        let allTickets = [];
+        let currentTicketTimer = null;
+
+        // Check if user is logged in
+        if (!currentUserId) {
+            window.location.href = 'index.html';
+        }
+
+        // Check fare for selected vehicle
+        async function checkFare() {
+            const vehicleId = document.getElementById('vehicleInput').value.trim();
+            if (!vehicleId) {
+                showError('fareError', 'Please enter a vehicle ID');
+                return;
+            }
+            
+            clearMessages();
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/get-vehicle-fare/${vehicleId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    selectedVehicleId = vehicleId;
+                    currentFare = data.fare;
+                    document.getElementById('fareAmount').textContent = data.fare;
+                    document.getElementById('validityMinutes').textContent = data.validityMinutes;
+                    document.getElementById('fareDisplay').style.display = 'block';
+                } else {
+                    showError('fareError', data.error || 'Vehicle not found');
+                }
+            } catch (error) {
+                console.error('Error fetching fare:', error);
+                showError('fareError', 'Failed to fetch fare information');
+            }
+        }
+
+        // Make payment
+        async function makePayment() {
+            if (!selectedVehicleId || !currentFare) {
+                showError('fareError', 'Please check fare first');
+                return;
+            }
+            
+            // Check if user has sufficient balance
+            const currentBalance = parseInt(document.getElementById('walletBalance').textContent);
+            if (currentBalance < currentFare) {
+                showError('fareError', 'Insufficient balance. Please add funds to your wallet.');
+                return;
+            }
+            
+            clearMessages();
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/pay`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: currentUserId,
+                        vehicleId: selectedVehicleId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess('paymentSuccess', `Payment successful! Ticket ID: ${data.ticketId.substring(0, 8)}`);
+                    document.getElementById('fareDisplay').style.display = 'none';
+                    document.getElementById('vehicleInput').value = '';
+                    selectedVehicleId = '';
+                    currentFare = 0;
+                    
+                    // Refresh data
+                    loadUserData();
+                    loadCurrentTicket();
+                    loadTicketHistory();
+                } else {
+                    showError('fareError', data.error || 'Payment failed');
+                }
+            } catch (error) {
+                console.error('Error making payment:', error);
+                showError('fareError', 'Payment failed. Please try again.');
+            }
+        }
+
+        // Load current valid ticket
+        async function loadCurrentTicket() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/get-user-tickets/${currentUserId}`);
+                const tickets = await response.json();
+                
+                const validTicket = tickets.find(ticket => ticket.isValid);
+                
+                if (validTicket) {
+                    displayCurrentTicket(validTicket);
+                    startTicketTimer(validTicket);
+                    document.getElementById('currentTicket').style.display = 'block';
+                    document.getElementById('noCurrentTicket').style.display = 'none';
+                } else {
+                    document.getElementById('currentTicket').style.display = 'none';
+                    document.getElementById('noCurrentTicket').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading current ticket:', error);
+                document.getElementById('noCurrentTicket').innerHTML = '<h4>Error</h4><p>Failed to load ticket information</p>';
+            }
+        }
+
+        // Display current ticket
+        function displayCurrentTicket(ticket) {
+            const ticketElement = document.getElementById('currentTicket');
+            ticketElement.querySelector('.ticket-id').textContent = `#${ticket.ticketId.substring(0, 8).toUpperCase()}`;
+            
+            const statusElement = ticketElement.querySelector('.ticket-status');
+            statusElement.textContent = ticket.isValid ? 'VALID' : 'EXPIRED';
+            statusElement.className = `ticket-status ${ticket.isValid ? 'valid' : 'expired'}`;
+            
+            ticketElement.querySelector('.vehicle-id').textContent = ticket.vehicleId;
+            ticketElement.querySelector('.fare-paid').textContent = ticket.farePaid;
+            
+            if (ticket.expiresAt) {
+                ticketElement.querySelector('.expires-at').textContent = new Date(ticket.expiresAt).toLocaleString();
+            }
+            
+            ticketElement.className = `ticket-card ${ticket.isValid ? 'valid' : 'expired'}`;
+        }
+
+        // Start countdown timer for current ticket
+        function startTicketTimer(ticket) {
+            if (currentTicketTimer) {
+                clearInterval(currentTicketTimer);
+            }
+            
+            const timerElement = document.querySelector('.time-remaining');
+            
+            const updateTimer = () => {
+                if (!ticket.expiresAt) {
+                    timerElement.textContent = 'No expiry time';
+                    return;
+                }
+                
+                const now = new Date().getTime();
+                const expiry = new Date(ticket.expiresAt).getTime();
+                const timeLeft = expiry - now;
+                
+                if (timeLeft > 0) {
+                    const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                    
+                    if (hours > 0) {
+                        timerElement.textContent = `⏰ ${hours}h ${minutes}m ${seconds}s remaining`;
+                    } else {
+                        timerElement.textContent = `⏰ ${minutes}m ${seconds}s remaining`;
+                    }
+                    timerElement.className = 'time-remaining';
+                } else {
+                    timerElement.textContent = '⚠️ EXPIRED';
+                    timerElement.className = 'time-remaining expired';
+                    clearInterval(currentTicketTimer);
+                    loadCurrentTicket(); // Refresh to update status
+                }
+            };
+            
+            updateTimer();
+            currentTicketTimer = setInterval(updateTimer, 1000);
+        }
+
+        // Load and display ticket history
+        async function loadTicketHistory() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/get-user-tickets/${currentUserId}`);
+                allTickets = await response.json();
+                
+                displayTicketHistory(allTickets);
+            } catch (error) {
+                console.error('Error loading ticket history:', error);
+                document.getElementById('ticketHistory').innerHTML = '<div class="error-message">Failed to load ticket history</div>';
+            }
+        }
+
+        // Display ticket history
+        function displayTicketHistory(tickets) {
+            const historyElement = document.getElementById('ticketHistory');
+            
+            if (tickets.length === 0) {
+                historyElement.innerHTML = '<div class="empty-state"><h4>No Tickets Found</h4><p>Your ticket history will appear here</p></div>';
+                return;
+            }
+            
+            historyElement.innerHTML = tickets.map(ticket => {
+                const date = ticket.timestamp && ticket.timestamp.seconds 
+                    ? new Date(ticket.timestamp.seconds * 1000).toLocaleString()
+                    : 'Unknown date';
+                
+                const expiryDate = ticket.expiresAt 
+                    ? new Date(ticket.expiresAt).toLocaleString()
+                    : 'No expiry';
+                
+                return `
+                    <div class="history-item ${ticket.isValid ? 'valid' : 'expired'}">
+                        <div class="history-header">
+                            <span class="ticket-id">#${ticket.ticketId.substring(0, 8).toUpperCase()}</span>
+                            <span class="status ${ticket.isValid ? 'valid' : 'expired'}">${ticket.isValid ? 'VALID' : 'EXPIRED'}</span>
+                        </div>
+                        <div class="history-details">
+                            <p><strong>Vehicle:</strong> ${ticket.vehicleId} | <strong>Fare:</strong> ₹${ticket.farePaid}</p>
+                            <p><strong>Purchased:</strong> ${date}</p>
+                            <p><strong>Expires:</strong> ${expiryDate}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Filter tickets
+        function filterTickets(filter, event) {
+            // Update active button
+            document.querySelectorAll('.filter-buttons button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            let filteredTickets = allTickets;
+            
+            if (filter === 'valid') {
+                filteredTickets = allTickets.filter(ticket => ticket.isValid);
+            } else if (filter === 'expired') {
+                filteredTickets = allTickets.filter(ticket => !ticket.isValid);
+            }
+            
+            displayTicketHistory(filteredTickets);
+        }
+
+        // Add funds to wallet
+        async function addFunds() {
+            const amount = parseInt(document.getElementById('fundAmount').value);
+            
+            if (!amount || amount < 1) {
+                showWalletMessage('Please enter a valid amount', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/add-funds`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: currentUserId,
+                        amount: amount
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showWalletMessage(`₹${amount} added successfully!`, 'success');
+                    document.getElementById('fundAmount').value = '';
+                    loadUserData(); // Refresh wallet balance
+                } else {
+                    showWalletMessage(data.error || 'Failed to add funds', 'error');
+                }
+            } catch (error) {
+                console.error('Error adding funds:', error);
+                showWalletMessage('Failed to add funds. Please try again.', 'error');
+            }
+        }
+
+        // Load user data
+        async function loadUserData() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/get-user-details/${currentUserId}`);
+                const userData = await response.json();
+                
+                if (userData.error) {
+                    throw new Error(userData.error);
+                }
+                
+                document.getElementById('userName').textContent = userData.fullName || 'User';
+                document.getElementById('walletBalance').textContent = userData.walletBalance || 0;
+                document.getElementById('currentBalance').textContent = userData.walletBalance || 0;
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                document.getElementById('userName').textContent = 'Error loading user';
+            }
+        }
+
+        // Utility functions
+        function clearMessages() {
+            document.getElementById('fareError').style.display = 'none';
+            document.getElementById('paymentSuccess').style.display = 'none';
+        }
+
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000);
+        }
+
+        function showSuccess(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000);
+        }
+
+        function showWalletMessage(message, type) {
+            const messageElement = document.getElementById('walletMessage');
+            messageElement.textContent = message;
+            messageElement.className = type === 'error' ? 'error-message' : 'success-message';
+            messageElement.style.display = 'block';
+            setTimeout(() => {
+                messageElement.style.display = 'none';
+            }, 5000);
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('userId');
+                localStorage.removeItem('userToken');
+                localStorage.removeItem('userType');
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+            loadCurrentTicket();
+            loadTicketHistory();
+            
+            // Auto-refresh current ticket every 30 seconds
+            setInterval(loadCurrentTicket, 30000);
+        });
+
+        // Cleanup timer when page is closed
+        window.addEventListener('beforeunload', function() {
+            if (currentTicketTimer) {
+                clearInterval(currentTicketTimer);
+            }
+        });
+    </script>
+</body>
+</html>

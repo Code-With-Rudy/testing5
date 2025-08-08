@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner Dashboard - Cholo Pay</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            font-weight: 300;
+        }
+
+        .header-info {
+            text-align: right;
+        }
+
+        .earnings-display {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .owner-name {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .vehicle-id {
+            font-size: 1em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .card h3 {
+            color: #333;
+            margin-bottom: 25px;
+            font-size: 1.4em;
+            border-bottom: 3px solid #f0f0f0;
+            padding-bottom: 12px;
+            position: relative;
+        }
+
+        .card h3::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: linear-gradient(90deg, #FF6B35, #F7931E);
+        }
+
+        /* Settings Section */
+        .settings-form {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 25px;
+            border-radius: 12px;
+            margin: 15px 0;
+            border: 1px solid #dee2e6;
+        }
+
+        .form-group {
+            margin: 20px 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #FF6B35;
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        .btn {
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-sync {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        }
+
+        .btn-sync:hover {
+            box-shadow: 0 8px 25px rgba(23, 162, 184, 0.3);
+        }
+
+        /* Tab System */
+        .ticket-tabs {
+            display: flex;
+            gap: 5px;
+            margin: 20px 0;
+            background: #f8f9fa;
+            padding: 5px;
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+        }
+
+        .tab-button:hover:not(.active) {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        /* Tickets Display */
+        .tickets-stats {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border-left: 5px solid #2196F3;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #1976D2;
+        }
+
+        .stat-label {
+            color: #424242;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .tickets-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .ticket-item {
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            background: white;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .ticket-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 4px;
+            background: #dee2e6;
+            border-radius: 12px 0 0 12px;
+        }
+
+        .ticket-item.active-ticket::before {
+            background: linear-gradient(180deg, #28a745, #20c997);
+        }
+
+        .ticket-item.expired-ticket::before {
+            background: linear-gradient(180deg, #dc3545, #fd7e14);
+        }
+
+        .ticket-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .ticket-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .passenger-info {
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f8f9fa;
+        }
+
+        .passenger-info strong {
+            font-size: 1.1em;
+            color: #495057;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .passenger-info small {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .ticket-details p {
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ticket-details strong {
+            color: #495057;
+        }
+
+        .status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status.active {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.expired {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Analytics Section */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .analytics-card {
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s ease;
+        }
+
+        .analytics-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .analytics-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .analytics-value.revenue {
+            color: #28a745;
+        }
+
+        .analytics-value.tickets {
+            color: #17a2b8;
+        }
+
+        .analytics-value.passengers {
+            color: #6f42c1;
+        }
+
+        .analytics-label {
+            color: #6c757d;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Messages */
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #f5c6cb;
+            margin: 15px 0;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #c3e6cb;
+            margin: 15px 0;
+        }
+
+        .warning-message {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ffeaa7;
+            margin: 15px 0;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .loading::after {
+            content: '';
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #FF6B35;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state h4 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        /* Logout Button */
+        .logout-btn {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(220, 53, 69, 0.3);
+        }
+
+        /* Revenue Debug Panel */
+        .debug-panel {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 0.9em;
+            display: none;
+        }
+
+        .debug-panel.show {
+            display: block;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+
+            .header-info {
+                text-align: center;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .ticket-info {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .ticket-tabs {
+                flex-direction: column;
+            }
+
+            .tab-button {
+                min-width: unset;
+            }
+
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header">
+            <div>
+                <h1>🚐 Owner Dashboard</h1>
+                <p>Manage your transport business</p>
+            </div>
+            <div class="header-info">
+                <div class="earnings-display">₹<span id="totalEarnings">0</span></div>
+                <div class="owner-name" id="ownerName">Loading...</div>
+                <div class="vehicle-id" id="vehicleId">Vehicle: Loading...</div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <!-- Analytics Overview -->
+        <div class="analytics-grid">
+            <div class="analytics-card">
+                <div class="analytics-value revenue" id="todayRevenue">₹0</div>
+                <div class="analytics-label">Today's Revenue</div>
+            </div>
+            <div class="analytics-card">
+                <div class="analytics-value tickets" id="activeTicketsCount">0</div>
+                <div class="analytics-label">Active Tickets</div>
+            </div>
+            <div class="analytics-card">
+                <div class="analytics-value passengers" id="totalPassengers">0</div>
+                <div class="analytics-label">Total Passengers</div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Settings Section -->
+            <div class="card">
+                <h3>⚙️ Business Settings</h3>
+                <div class="settings-form">
+                    <div class="form-group">
+                        <label for="fareInput">Fixed Fare (₹):</label>
+                        <input type="number" id="fareInput" value="10" min="1" max="1000">
+                        <small style="color: #6c757d; margin-top: 5px; display: block;">
+                            Current fare amount charged per ticket
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label for="validityInput">Ticket Validity (minutes):</label>
+                        <input type="number" id="validityInput" value="30" min="5" max="120">
+                        <small style="color: #6c757d; margin-top: 5px; display: block;">
+                            How long tickets remain valid (5-120 minutes)
+                        </small>
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        <button class="btn" onclick="updateSettings()">Update Settings</button>
+                        <button class="btn btn-sync" onclick="syncRevenue()">🔄 Sync Revenue</button>
+                        <button class="btn" onclick="toggleDebug()" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%);">
+                            🐛 Debug
+                        </button>
+                    </div>
+                </div>
+                <div id="settingsMessage" style="margin-top: 15px;"></div>
+                
+                <!-- Debug Panel -->
+                <div id="debugPanel" class="debug-panel">
+                    <h5>Revenue Debug Information:</h5>
+                    <div id="debugContent"></div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card">
+                <h3>📊 Quick Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalTickets">0</div>
+                        <div class="stat-label">Total Tickets</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="expiredTickets">0</div>
+                        <div class="stat-label">Expired Tickets</div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <p><strong>Average Daily Revenue:</strong> ₹<span id="avgDailyRevenue">0</span></p>
+                    <p style="margin-top: 5px;"><strong>Revenue per Passenger:</strong> ₹<span id="revenuePerPassenger">0</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Passenger Tickets Section -->
+        <div class="card">
+            <h3>🎫 Passenger Management</h3>
+            <div class="ticket-tabs">
+                <button class="tab-button active" onclick="showTickets('active', event)">
+                    Active Tickets
+                </button>
+                <button class="tab-button" onclick="showTickets('expired', event)">
+                    Expired Tickets
+                </button>
+                <button class="tab-button" onclick="showTickets('all', event)">
+                    All Tickets
+                </button>
+            </div>
+            
+            <div id="ticketsDisplay">
+                <div class="loading">Loading passenger data...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = '/api';
+        let currentOwnerId = localStorage.getItem('ownerId');
+        let currentTickets = [];
+        let debugMode = false;
+
+        // Check if owner is logged in
+        if (!currentOwnerId) {
+            // In a real app, you would redirect, but for this example, we log an error.
+            console.error("Owner ID not found. Please log in.");
+            // To prevent a redirect loop in an iframe/sandboxed environment:
+            // window.location.href = 'index.html';
+        }
+
+        /**
+         * [CRITICAL FIX] Parses a non-standard date string (e.g., "8/5/2025, 2:52:53 AM").
+         * JavaScript's `new Date()` is unreliable with this format. This function manually
+         * deconstructs the string to create a valid Date object, avoiding parsing errors.
+         * @param {string} dateString The date string from the backend.
+         * @returns {Date|null} A valid Date object or null if the format is invalid.
+         */
+        function parseCustomDateString(dateString) {
+            if (!dateString || typeof dateString !== 'string') {
+                return null;
+            }
+            // Example format: "8/5/2025, 2:52:53 AM"
+            const parts = dateString.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}), (\d{1,2}):(\d{2}):(\d{2}) (AM|PM)/);
+            if (!parts) {
+                // Fallback for ISO strings or other standard formats
+                const d = new Date(dateString);
+                if (!isNaN(d)) return d;
+                console.warn(`Could not parse date: ${dateString}`);
+                return null;
+            }
+
+            const [, month, day, year, hour, minute, second, ampm] = parts.map((p, i) => (i > 0 && i < 7) ? parseInt(p, 10) : p);
+            
+            let hour24 = hour;
+            if (ampm.toUpperCase() === 'PM' && hour !== 12) {
+                hour24 += 12;
+            } else if (ampm.toUpperCase() === 'AM' && hour === 12) { // Midnight case
+                hour24 = 0;
+            }
+
+            // Month is 0-indexed in JavaScript's Date constructor
+            return new Date(year, month - 1, day, hour24, minute, second);
+        }
+
+
+        /**
+         * [FIXED] Determines if a ticket is currently active by comparing its expiry date to the current time.
+         * This makes the client-side the source of truth for status, avoiding timezone issues with the server.
+         * @param {object} ticket The ticket object from the API.
+         * @returns {boolean} True if the ticket is active, false otherwise.
+         */
+        function isTicketActive(ticket) {
+            if (!ticket || !ticket.expiresAt) {
+                return false; // Cannot be active without an expiry date.
+            }
+            const now = new Date();
+            // Use the reliable parsing function instead of the default `new Date()` constructor
+            const expiryDate = parseCustomDateString(ticket.expiresAt);
+
+            if (!expiryDate) {
+                return false; // If parsing failed, assume it's not active.
+            }
+            
+            // A ticket is active if the current time is before its expiry time.
+            return now < expiryDate;
+        }
+
+
+        // PERFECT REVENUE CALCULATION SOLUTION
+        async function loadAnalytics() {
+            if (!currentOwnerId) return; // Don't run if not logged in
+            try {
+                console.log('🔄 Loading analytics...');
+                const response = await fetch(`${API_BASE_URL}/get-owner-tickets/${currentOwnerId}`);
+                if (!response.ok) {
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+                const allTickets = await response.json();
+
+                if (Array.isArray(allTickets) && allTickets.length > 0) {
+                    console.log(`📊 Processing ${allTickets.length} tickets for analytics`);
+
+                    // STEP 1: Calculate Total Revenue (baseline)
+                    const totalRevenue = allTickets.reduce((sum, ticket) => {
+                        const fare = parseFloat(ticket.farePaid) || 0;
+                        return sum + fare;
+                    }, 0);
+
+                    // STEP 2: Get Today's Date Range (proper timezone handling)
+                    const now = new Date();
+                    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+                    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+
+                    // STEP 3: Filter Today's Tickets with validation
+                    const todayTickets = allTickets.filter(ticket => {
+                        if (ticket.timestamp && ticket.timestamp.seconds) {
+                            const ticketDate = new Date(ticket.timestamp.seconds * 1000);
+                            return ticketDate >= todayStart && ticketDate <= todayEnd;
+                        }
+                        return false;
+                    });
+
+                    // STEP 4: Calculate Today's Revenue
+                    const todayRevenue = todayTickets.reduce((sum, ticket) => {
+                        const fare = parseFloat(ticket.farePaid) || 0;
+                        return sum + fare;
+                    }, 0);
+
+                    // STEP 5: VALIDATION - Ensure Today's Revenue ≤ Total Revenue
+                    const validatedTodayRevenue = Math.min(todayRevenue, totalRevenue);
+
+                    if (todayRevenue > totalRevenue) {
+                        console.warn('⚠️ Revenue inconsistency detected and corrected!');
+                        console.warn(`Original today's revenue: ₹${todayRevenue}`);
+                        console.warn(`Corrected to: ₹${validatedTodayRevenue}`);
+                    }
+
+                    // STEP 6: Calculate other metrics using the reliable isTicketActive function
+                    const activeTickets = allTickets.filter(isTicketActive);
+                    const expiredTickets = allTickets.filter(ticket => !isTicketActive(ticket));
+                    const uniquePassengers = new Set(allTickets.map(t => t.userId)).size;
+
+                    // STEP 7: Update UI with validated data
+                    document.getElementById('todayRevenue').textContent = `₹${validatedTodayRevenue.toFixed(2)}`;
+                    document.getElementById('activeTicketsCount').textContent = activeTickets.length;
+                    document.getElementById('totalPassengers').textContent = uniquePassengers;
+                    document.getElementById('totalTickets').textContent = allTickets.length;
+                    document.getElementById('expiredTickets').textContent = expiredTickets.length;
+                    document.getElementById('totalEarnings').textContent = totalRevenue.toFixed(2);
+
+                    // STEP 8: Calculate averages
+                    const avgDaily = validatedTodayRevenue;
+                    const revenuePerPassenger = uniquePassengers > 0 ? Math.round(totalRevenue / uniquePassengers) : 0;
+
+                    document.getElementById('avgDailyRevenue').textContent = avgDaily.toFixed(2);
+                    document.getElementById('revenuePerPassenger').textContent = revenuePerPassenger;
+
+                    // STEP 9: Debug information
+                    const debugInfo = {
+                        'Total Tickets': allTickets.length,
+                        'Today\'s Tickets': todayTickets.length,
+                        'Total Revenue': `₹${totalRevenue.toFixed(2)}`,
+                        'Today\'s Revenue': `₹${validatedTodayRevenue.toFixed(2)}`,
+                        'Active Tickets (Calculated)': activeTickets.length,
+                        'Expired Tickets (Calculated)': expiredTickets.length,
+                        'Unique Passengers': uniquePassengers,
+                        'Date Range': `${todayStart.toLocaleDateString()} - ${todayEnd.toLocaleDateString()}`
+                    };
+
+                    console.table(debugInfo);
+
+                    // Update debug panel
+                    updateDebugPanel(debugInfo, allTickets, todayTickets);
+
+                    console.log('✅ Analytics loaded successfully');
+                } else {
+                    // No tickets case
+                    console.log('📊 No tickets found');
+                    resetAnalyticsToZero();
+                }
+
+            } catch (error) {
+                console.error('❌ Error loading analytics:', error);
+                resetAnalyticsToZero();
+            }
+        }
+
+        // Reset all analytics to zero
+        function resetAnalyticsToZero() {
+            document.getElementById('todayRevenue').textContent = '₹0';
+            document.getElementById('activeTicketsCount').textContent = '0';
+            document.getElementById('totalPassengers').textContent = '0';
+            document.getElementById('totalTickets').textContent = '0';
+            document.getElementById('expiredTickets').textContent = '0';
+            document.getElementById('totalEarnings').textContent = '0';
+            document.getElementById('avgDailyRevenue').textContent = '0';
+            document.getElementById('revenuePerPassenger').textContent = '0';
+        }
+
+        // Update debug panel
+        function updateDebugPanel(debugInfo, allTickets, todayTickets) {
+            if (!debugMode) return;
+
+            const debugContent = document.getElementById('debugContent');
+            debugContent.innerHTML = `
+                <pre>${JSON.stringify(debugInfo, null, 2)}</pre>
+                <hr>
+                <h6>Sample Tickets:</h6>
+                <pre>All Tickets Sample: ${JSON.stringify(allTickets.slice(0, 2), null, 2)}</pre>
+                <pre>Today's Tickets: ${JSON.stringify(todayTickets.slice(0, 2), null, 2)}</pre>
+            `;
+        }
+
+        // Toggle debug panel
+        function toggleDebug() {
+            debugMode = !debugMode;
+            const panel = document.getElementById('debugPanel');
+            panel.classList.toggle('show', debugMode);
+            if (debugMode) {
+                loadAnalytics(); // Refresh with debug info
+            }
+        }
+
+        // Manual revenue sync
+        async function syncRevenue() {
+            if (!currentOwnerId) return;
+            try {
+                showSettingsMessage('🔄 Syncing revenue data...', 'info');
+
+                const response = await fetch(`${API_BASE_URL}/sync-owner-earnings/${currentOwnerId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSettingsMessage(`✅ Revenue synced! Total: ₹${data.totalRevenue} from ${data.ticketCount} tickets`, 'success');
+                    setTimeout(() => {
+                        loadAnalytics();
+                        loadOwnerData();
+                    }, 1000);
+                } else {
+                    showSettingsMessage('❌ Failed to sync revenue', 'error');
+                }
+            } catch (error) {
+                console.error('Error syncing revenue:', error);
+                showSettingsMessage('❌ Failed to sync revenue', 'error');
+            }
+        }
+
+        // Update owner settings
+        async function updateSettings() {
+            if (!currentOwnerId) return;
+            const fare = parseInt(document.getElementById('fareInput').value);
+            const validity = parseInt(document.getElementById('validityInput').value);
+
+            if (fare < 1 || fare > 1000) {
+                showSettingsMessage('Fare must be between ₹1 and ₹1000', 'error');
+                return;
+            }
+
+            if (validity < 5 || validity > 120) {
+                showSettingsMessage('Validity must be between 5 and 120 minutes', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/update-owner-settings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ownerId: currentOwnerId,
+                        fixedFare: fare,
+                        ticketValidityMinutes: validity
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSettingsMessage('✅ Settings updated successfully! 🎉', 'success');
+                    setTimeout(loadAnalytics, 1000);
+                } else {
+                    showSettingsMessage(data.error || 'Failed to update settings', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating settings:', error);
+                showSettingsMessage('Failed to update settings. Please try again.', 'error');
+            }
+        }
+
+        /**
+         * [FIXED] Shows tickets by status.
+         * This function now fetches ALL tickets and filters them on the client-side
+         * to ensure the status (active/expired) is calculated correctly using local time.
+         */
+        async function showTickets(status, event) {
+            if (event) {
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                event.target.classList.add('active');
+            }
+
+            document.getElementById('ticketsDisplay').innerHTML = '<div class="loading">Loading tickets...</div>';
+
+            try {
+                // Always fetch all tickets to ensure we have the latest data to filter from.
+                const response = await fetch(`${API_BASE_URL}/get-owner-tickets/${currentOwnerId}`);
+                if (!response.ok) {
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+                const allTickets = await response.json();
+                
+                // Filter tickets on the client-side based on the requested status
+                let ticketsToShow;
+                if (status === 'active') {
+                    ticketsToShow = allTickets.filter(isTicketActive);
+                } else if (status === 'expired') {
+                    ticketsToShow = allTickets.filter(ticket => !isTicketActive(ticket));
+                } else { // 'all'
+                    ticketsToShow = allTickets;
+                }
+
+                currentTickets = ticketsToShow;
+                displayTickets(ticketsToShow, status);
+
+            } catch (error) {
+                console.error('Error loading tickets:', error);
+                document.getElementById('ticketsDisplay').innerHTML =
+                    '<div class="error-message">Failed to load tickets. Please try again.</div>';
+            }
+        }
+
+        // Display tickets
+        function displayTickets(tickets, status) {
+            const displayElement = document.getElementById('ticketsDisplay');
+
+            if (!tickets || tickets.length === 0) {
+                displayElement.innerHTML = `
+                    <div class="empty-state">
+                        <h4>No ${status} tickets found</h4>
+                        <p>Tickets will appear here once passengers start using your vehicle</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const totalRevenue = tickets.reduce((sum, ticket) => sum + (parseFloat(ticket.farePaid) || 0), 0);
+            const uniquePassengers = new Set(tickets.map(t => t.userId)).size;
+
+            displayElement.innerHTML = `
+                <div class="tickets-stats">
+                    <h4 style="margin-bottom: 15px; color: #1976D2;">📈 ${status.charAt(0).toUpperCase() + status.slice(1)} Tickets Overview</h4>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value">${tickets.length}</div>
+                            <div class="stat-label">Total Tickets</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">₹${totalRevenue.toFixed(2)}</div>
+                            <div class="stat-label">Total Revenue</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${uniquePassengers}</div>
+                            <div class="stat-label">Unique Passengers</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">₹${uniquePassengers > 0 ? (totalRevenue / uniquePassengers).toFixed(2) : '0.00'}</div>
+                            <div class="stat-label">Avg per Passenger</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tickets-list">
+                    ${tickets.map(ticket => createTicketHTML(ticket)).join('')}
+                </div>
+            `;
+        }
+
+        /**
+         * [FIXED] Create HTML for individual ticket.
+         * Now uses the isTicketActive() helper for reliable status display.
+         */
+        function createTicketHTML(ticket) {
+            // Handle both UNIX timestamp and custom date strings for purchase date
+            const purchaseDateObj = ticket.timestamp && ticket.timestamp.seconds ?
+                new Date(ticket.timestamp.seconds * 1000) :
+                parseCustomDateString(ticket.purchaseDate); // Assuming a purchaseDate field might exist
+            const purchaseDate = purchaseDateObj ? purchaseDateObj.toLocaleString() : 'Unknown date';
+
+            // Use the reliable parser for the expiry date
+            const expiryDateObj = parseCustomDateString(ticket.expiresAt);
+            const expiryDate = expiryDateObj ? expiryDateObj.toLocaleString() : 'No expiry set';
+
+            // Use the reliable helper function to determine status
+            const isActive = isTicketActive(ticket);
+
+            return `
+                <div class="ticket-item ${isActive ? 'active-ticket' : 'expired-ticket'}">
+                    <div class="ticket-info">
+                        <div class="passenger-info">
+                            <strong>👤 ${ticket.userName || 'Unknown Passenger'}</strong>
+                            <small>${ticket.userEmail || 'No email provided'}</small>
+                        </div>
+                        <div class="ticket-details">
+                            <p>
+                                <strong>🎫 Ticket ID:</strong> 
+                                <span style="font-family: monospace; background: #f8f9fa; padding: 2px 6px; border-radius: 4px;">
+                                    #${ticket.ticketId ? ticket.ticketId.substring(0, 8).toUpperCase() : 'N/A'}
+                                </span>
+                            </p>
+                            <p><strong>💰 Fare Paid:</strong> <span style="color: #28a745; font-weight: bold;">₹${parseFloat(ticket.farePaid || 0).toFixed(2)}</span></p>
+                            <p><strong>📅 Purchase Date:</strong> ${purchaseDate}</p>
+                            <p><strong>⏰ Expires At:</strong> ${expiryDate}</p>
+                            <p>
+                                <strong>📊 Status:</strong> 
+                                <span class="status ${isActive ? 'active' : 'expired'}">
+                                    ${isActive ? '✅ ACTIVE' : '❌ EXPIRED'}
+                                </span>
+                            </p>
+                        </div>
+                </div>
+            `;
+        }
+
+        // Load owner data
+        async function loadOwnerData() {
+            if (!currentOwnerId) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/get-owner-details/${currentOwnerId}`);
+                const ownerData = await response.json();
+
+                if (ownerData.error) {
+                    throw new Error(ownerData.error);
+                }
+
+                document.getElementById('ownerName').textContent = ownerData.fullName || 'Owner';
+                document.getElementById('vehicleId').textContent = `Vehicle: ${ownerData.vehicleId || 'N/A'}`;
+
+                if (ownerData.fixedFare) {
+                    document.getElementById('fareInput').value = ownerData.fixedFare;
+                }
+                if (ownerData.ticketValidityMinutes) {
+                    document.getElementById('validityInput').value = ownerData.ticketValidityMinutes;
+                }
+
+            } catch (error) {
+                console.error('Error loading owner data:', error);
+                document.getElementById('ownerName').textContent = 'Error loading data';
+            }
+        }
+
+        // Utility functions
+        function showSettingsMessage(message, type) {
+            const messageElement = document.getElementById('settingsMessage');
+            const className = type === 'error' ? 'error-message' :
+                type === 'info' ? 'warning-message' : 'success-message';
+
+            messageElement.innerHTML = `<div class="${className}">${message}</div>`;
+
+            setTimeout(() => {
+                messageElement.innerHTML = '';
+            }, 5000);
+        }
+
+        /**
+         * [FIXED] Logs out the user.
+         * Removed the blocking `confirm()` call. It should be replaced with a non-blocking,
+         * custom UI modal for a better user experience.
+         */
+        function logout() {
+            // A confirm dialog can lock the browser. It's better to use a custom modal.
+            // if (confirm('Are you sure you want to logout?')) {
+            console.log('Logging out...');
+            localStorage.removeItem('ownerId');
+            localStorage.removeItem('ownerToken');
+            localStorage.removeItem('userType');
+            window.location.href = 'index.html';
+            // }
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            if (currentOwnerId) {
+                console.log('🚀 Initializing owner dashboard...');
+                loadOwnerData();
+                loadAnalytics();
+                // Set the 'Active' tab as default and load its content
+                const activeButton = document.querySelector('.tab-button[onclick*="active"]');
+                if (activeButton) {
+                    activeButton.classList.add('active');
+                }
+                showTickets('active');
+
+                // Auto-refresh every 2 minutes
+                setInterval(() => {
+                    console.log('Auto-refreshing data...');
+                    loadAnalytics();
+                    const activeTab = document.querySelector('.tab-button.active');
+                    // Refresh the view for the currently active tab
+                    if (activeTab) {
+                        if (activeTab.textContent.toLowerCase().includes('active')) {
+                            showTickets('active');
+                        } else if (activeTab.textContent.toLowerCase().includes('expired')) {
+                            showTickets('expired');
+                        } else if (activeTab.textContent.toLowerCase().includes('all')) {
+                            showTickets('all');
+                        }
+                    }
+                }, 120000);
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                // Use a more robust way to find buttons if the onclick attribute changes
+                switch (e.key) {
+                    case '1':
+                        e.preventDefault();
+                        document.querySelector('.tab-button[onclick*="\'active\'"]').click();
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        document.querySelector('.tab-button[onclick*="\'expired\'"]').click();
+                        break;
+                    case '3':
+                        e.preventDefault();
+                        document.querySelector('.tab-button[onclick*="\'all\'"]').click();
+                        break;
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

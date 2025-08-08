@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cholo Pay - Transport Payment App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 100%;
+            max-width: 800px;
+            min-height: 600px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 16px;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: #4CAF50;
+            border-bottom-color: #4CAF50;
+        }
+
+        .tab:hover {
+            color: #4CAF50;
+        }
+
+        .form-container {
+            display: none;
+        }
+
+        .form-container.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .error {
+            color: #f44336;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .success {
+            color: #4CAF50;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading::after {
+            content: '';
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .features {
+            background: #f8f9fa;
+            padding: 30px;
+            margin-top: 30px;
+            border-radius: 10px;
+        }
+
+        .features h3 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .feature-card h4 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab {
+                text-align: center;
+                border-bottom: 1px solid #f0f0f0;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+
+        .info-section {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #2196F3;
+        }
+
+        .info-section h4 {
+            color: #1976D2;
+            margin-bottom: 10px;
+        }
+
+        .info-section p {
+            color: #424242;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚌 Cholo Pay</h1>
+            <p>Smart Transport Payment Solution</p>
+        </div>
+
+        <div class="content">
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('user-login')">User Login</button>
+                <button class="tab" onclick="showTab('user-register')">User Register</button>
+                <button class="tab" onclick="showTab('owner-login')">Owner Login</button>
+                <button class="tab" onclick="showTab('owner-register')">Owner Register</button>
+            </div>
+
+            <!-- User Login Form -->
+            <div id="user-login" class="form-container active">
+                <h2 style="text-align: center; margin-bottom: 30px; color: #333;">User Login</h2>
+                
+                <div class="info-section">
+                    <h4>🎫 For Passengers</h4>
+                    <p>• Check live ticket validity with countdown timer</p>
+                    <p>• View fare before making payment</p>
+                    <p>• Access complete ticket history</p>
+                    <p>• Digital wallet management</p>
+                </div>
+
+                <form id="userLoginForm">
+                    <div class="form-group">
+                        <label for="userEmail">Email Address</label>
+                        <input type="email" id="userEmail" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userPassword">Password</label>
+                        <input type="password" id="userPassword" name="password" required>
+                    </div>
+                    <button type="submit" class="btn">Login as User</button>
+                    <div class="error" id="userLoginError"></div>
+                    <div class="success" id="userLoginSuccess"></div>
+                </form>
+                <div class="loading" id="userLoginLoading"></div>
+            </div>
+
+            <!-- User Registration Form -->
+            <div id="user-register" class="form-container">
+                <h2 style="text-align: center; margin-bottom: 30px; color: #333;">User Registration</h2>
+                
+                <div class="info-section">
+                    <h4>🚀 Join Cholo Pay</h4>
+                    <p>• Instant digital payments</p>
+                    <p>• Real-time ticket validation</p>
+                    <p>• Secure wallet system</p>
+                    <p>• Track all your journeys</p>
+                </div>
+
+                <form id="userRegisterForm">
+                    <div class="form-group">
+                        <label for="userRegName">Full Name</label>
+                        <input type="text" id="userRegName" name="fullName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userRegEmail">Email Address</label>
+                        <input type="email" id="userRegEmail" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userRegPassword">Password</label>
+                        <input type="password" id="userRegPassword" name="password" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn">Register as User</button>
+                    <div class="error" id="userRegisterError"></div>
+                    <div class="success" id="userRegisterSuccess"></div>
+                </form>
+                <div class="loading" id="userRegisterLoading"></div>
+            </div>
+
+            <!-- Owner Login Form -->
+            <div id="owner-login" class="form-container">
+                <h2 style="text-align: center; margin-bottom: 30px; color: #333;">Owner Login</h2>
+                
+                <div class="info-section">
+                    <h4>🚐 For Vehicle Owners</h4>
+                    <p>• View active and expired tickets</p>
+                    <p>• See passenger details and journey history</p>
+                    <p>• Edit fare and ticket validity settings</p>
+                    <p>• Real-time revenue tracking</p>
+                </div>
+
+                <form id="ownerLoginForm">
+                    <div class="form-group">
+                        <label for="ownerEmail">Email Address</label>
+                        <input type="email" id="ownerEmail" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ownerPassword">Password</label>
+                        <input type="password" id="ownerPassword" name="password" required>
+                    </div>
+                    <button type="submit" class="btn">Login as Owner</button>
+                    <div class="error" id="ownerLoginError"></div>
+                    <div class="success" id="ownerLoginSuccess"></div>
+                </form>
+                <div class="loading" id="ownerLoginLoading"></div>
+            </div>
+
+            <!-- Owner Registration Form -->
+            <div id="owner-register" class="form-container">
+                <h2 style="text-align: center; margin-bottom: 30px; color: #333;">Owner Registration</h2>
+                
+                <div class="info-section">
+                    <h4>💼 Start Your Business</h4>
+                    <p>• Set custom fare rates</p>
+                    <p>• Manage ticket validity duration</p>
+                    <p>• Track passenger data</p>
+                    <p>• Monitor daily earnings</p>
+                </div>
+
+                <form id="ownerRegisterForm">
+                    <div class="form-group">
+                        <label for="ownerRegName">Full Name</label>
+                        <input type="text" id="ownerRegName" name="fullName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ownerRegEmail">Email Address</label>
+                        <input type="email" id="ownerRegEmail" name="email" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="vehicleId">Vehicle ID</label>
+                            <input type="text" id="vehicleId" name="vehicleId" placeholder="e.g., BUS001" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="fixedFare">Fixed Fare (₹)</label>
+                            <input type="number" id="fixedFare" name="fixedFare" value="10" min="1" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="ownerRegPassword">Password</label>
+                        <input type="password" id="ownerRegPassword" name="password" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn">Register as Owner</button>
+                    <div class="error" id="ownerRegisterError"></div>
+                    <div class="success" id="ownerRegisterSuccess"></div>
+                </form>
+                <div class="loading" id="ownerRegisterLoading"></div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="features">
+            <h3>🌟 App Features</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <span class="icon">🎫</span>
+                    <h4>Smart Ticketing</h4>
+                    <p>Digital tickets with real-time validity checking and countdown timers</p>
+                </div>
+                <div class="feature-card">
+                    <span class="icon">💳</span>
+                    <h4>Digital Wallet</h4>
+                    <p>Secure payment system with instant transaction processing</p>
+                </div>
+                <div class="feature-card">
+                    <span class="icon">📊</span>
+                    <h4>Analytics Dashboard</h4>
+                    <p>Comprehensive ticket history and revenue tracking for owners</p>
+                </div>
+                <div class="feature-card">
+                    <span class="icon">⚙️</span>
+                    <h4>Flexible Settings</h4>
+                    <p>Customizable fare rates and ticket validity duration</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = '/api';
+
+        // Tab switching functionality
+        function showTab(tabName) {
+            // Hide all form containers
+            document.querySelectorAll('.form-container').forEach(container => {
+                container.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected form container
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+            
+            // Clear any previous messages
+            clearMessages();
+        }
+
+        // Clear error and success messages
+        function clearMessages() {
+            document.querySelectorAll('.error, .success').forEach(msg => {
+                msg.style.display = 'none';
+                msg.textContent = '';
+            });
+        }
+
+        // Show loading state
+        function showLoading(formType) {
+            document.getElementById(formType + 'Loading').style.display = 'block';
+            document.querySelector(`#${formType}Form button`).disabled = true;
+        }
+
+        // Hide loading state
+        function hideLoading(formType) {
+            document.getElementById(formType + 'Loading').style.display = 'none';
+            document.querySelector(`#${formType}Form button`).disabled = false;
+        }
+
+        // Show error message
+        function showError(formType, message) {
+            const errorElement = document.getElementById(formType + 'Error');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+
+        // Show success message
+        function showSuccess(formType, message) {
+            const successElement = document.getElementById(formType + 'Success');
+            successElement.textContent = message;
+            successElement.style.display = 'block';
+        }
+
+        // User Login Form Handler
+        document.getElementById('userLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearMessages();
+            showLoading('userLogin');
+
+            const formData = new FormData(e.target);
+            const userData = Object.fromEntries(formData);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/login/user`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess('userLogin', 'Login successful! Redirecting...');
+                    
+                    // Store user data in localStorage
+                    localStorage.setItem('userToken', data.token);
+                    localStorage.setItem('userId', data.uid);
+                    localStorage.setItem('userType', 'user');
+                    
+                    // Redirect to user dashboard after 1.5 seconds
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1500);
+                } else {
+                    showError('userLogin', data.error || 'Login failed');
+                }
+            } catch (error) {
+                showError('userLogin', 'Network error. Please try again.');
+                console.error('Login error:', error);
+            } finally {
+                hideLoading('userLogin');
+            }
+        });
+
+        // User Registration Form Handler
+        document.getElementById('userRegisterForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearMessages();
+            showLoading('userRegister');
+
+            const formData = new FormData(e.target);
+            const userData = Object.fromEntries(formData);
+
+            // Basic validation
+            if (userData.password.length < 6) {
+                showError('userRegister', 'Password must be at least 6 characters long');
+                hideLoading('userRegister');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/register/user`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess('userRegister', 'Registration successful! You can now login.');
+                    
+                    // Clear form
+                    e.target.reset();
+                    
+                    // Switch to login tab after 2 seconds
+                    setTimeout(() => {
+                        showTab('user-login');
+                    }, 2000);
+                } else {
+                    showError('userRegister', data.error || 'Registration failed');
+                }
+            } catch (error) {
+                showError('userRegister', 'Network error. Please try again.');
+                console.error('Registration error:', error);
+            } finally {
+                hideLoading('userRegister');
+            }
+        });
+
+        // Owner Login Form Handler
+        document.getElementById('ownerLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearMessages();
+            showLoading('ownerLogin');
+
+            const formData = new FormData(e.target);
+            const ownerData = Object.fromEntries(formData);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/login/owner`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(ownerData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess('ownerLogin', 'Login successful! Redirecting...');
+                    
+                    // Store owner data in localStorage
+                    localStorage.setItem('ownerToken', data.token);
+                    localStorage.setItem('ownerId', data.uid);
+                    localStorage.setItem('userType', 'owner');
+                    
+                    // Redirect to owner dashboard after 1.5 seconds
+                    setTimeout(() => {
+                        window.location.href = 'owner_dashboard.html';
+                    }, 1500);
+                } else {
+                    showError('ownerLogin', data.error || 'Login failed');
+                }
+            } catch (error) {
+                showError('ownerLogin', 'Network error. Please try again.');
+                console.error('Owner login error:', error);
+            } finally {
+                hideLoading('ownerLogin');
+            }
+        });
+
+        // Owner Registration Form Handler
+        document.getElementById('ownerRegisterForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearMessages();
+            showLoading('ownerRegister');
+
+            const formData = new FormData(e.target);
+            const ownerData = Object.fromEntries(formData);
+
+            // Basic validation
+            if (ownerData.password.length < 6) {
+                showError('ownerRegister', 'Password must be at least 6 characters long');
+                hideLoading('ownerRegister');
+                return;
+            }
+
+            if (parseInt(ownerData.fixedFare) < 1) {
+                showError('ownerRegister', 'Fixed fare must be at least ₹1');
+                hideLoading('ownerRegister');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/register/owner`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ...ownerData,
+                        fixedFare: parseInt(ownerData.fixedFare)
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess('ownerRegister', 'Registration successful! You can now login.');
+                    
+                    // Clear form
+                    e.target.reset();
+                    
+                    // Switch to owner login tab after 2 seconds
+                    setTimeout(() => {
+                        showTab('owner-login');
+                    }, 2000);
+                } else {
+                    showError('ownerRegister', data.error || 'Registration failed');
+                }
+            } catch (error) {
+                showError('ownerRegister', 'Network error. Please try again.');
+                console.error('Owner registration error:', error);
+            } finally {
+                hideLoading('ownerRegister');
+            }
+        });
+
+        // Form validation helpers
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add real-time validation feedback
+            const inputs = document.querySelectorAll('input[required]');
+            inputs.forEach(input => {
+                input.addEventListener('blur', function() {
+                    if (this.validity.valid) {
+                        this.style.borderColor = '#4CAF50';
+                    } else {
+                        this.style.borderColor = '#f44336';
+                    }
+                });
+
+                input.addEventListener('input', function() {
+                    if (this.validity.valid) {
+                        this.style.borderColor = '#4CAF50';
+                    } else {
+                        this.style.borderColor = '#e0e0e0';
+                    }
+                });
+            });
+
+            // Password strength indicator for registration forms
+            const passwordInputs = document.querySelectorAll('input[type="password"]');
+            passwordInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    const strength = getPasswordStrength(this.value);
+                    
+                    if (this.value.length > 0) {
+                        if (strength < 2) {
+                            this.style.borderColor = '#f44336';
+                        } else if (strength < 4) {
+                            this.style.borderColor = '#ff9800';
+                        } else {
+                            this.style.borderColor = '#4CAF50';
+                        }
+                    }
+                });
+            });
+        });
+
+        // Password strength helper function
+        function getPasswordStrength(password) {
+            let strength = 0;
+            if (password.length >= 6) strength++;
+            if (password.length >= 8) strength++;
+            if (/[a-z]/.test(password)) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            return strength;
+        }
+
+        // Check if user is already logged in
+        window.addEventListener('load', function() {
+            const userToken = localStorage.getItem('userToken');
+            const ownerToken = localStorage.getItem('ownerToken');
+            const userType = localStorage.getItem('userType');
+
+            if (userToken && userType === 'user') {
+                window.location.href = 'dashboard.html';
+            } else if (ownerToken && userType === 'owner') {
+                window.location.href = 'owner_dashboard.html';
+            }
+        });
+    </script>
+</body>
+</html>
