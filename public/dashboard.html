@@ -1,484 +1,453 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tick.IT - Rider Dashboard</title>
-  <link rel="manifest" href="/manifest.json" />
-  <link rel="stylesheet" href="/uber.css" />
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard - Tick.IT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="uber.css">
 </head>
 <body>
-  <div class="app-container">
-    <div class="topbar">
-      <div class="brand">🚍 Tick<span>.IT</span></div>
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <span id="userNameDisplay" style="font-size: 0.85rem; color: var(--text-muted);"></span>
-        <button class="btn btn-secondary btn-sm" onclick="logout()">Sign Out</button>
-      </div>
-    </div>
-
-    <!-- Low Balance Alert Banner (< ₹20) -->
-    <div id="lowBalanceBanner" class="low-balance-banner" style="display: none;">
-      <div>
-        <strong>⚠️ Low Wallet Balance!</strong>
-        <div style="font-size: 0.8rem;">Your balance is below ₹20.00. Top up to avoid boarding delays.</div>
-      </div>
-      <button class="btn btn-sm" onclick="openTopupModal()">Top Up</button>
-    </div>
-
-    <!-- Wallet Card -->
-    <div class="card wallet-card">
-      <div style="font-size: 0.82rem; color: #a7f3d0; font-weight: 600; text-transform: uppercase;">
-        Available Transit Balance
-      </div>
-      <div id="walletBalance" class="balance-amount">₹0.00</div>
-      <div style="display: flex; gap: 10px;">
-        <button class="btn" onclick="openScannerModal()">📷 Scan Bus QR</button>
-        <button class="btn btn-secondary" onclick="openTopupModal()">+ Add Funds</button>
-      </div>
-    </div>
-
-    <!-- Quick Vehicle Entry & Recent Vehicles -->
-    <div class="card">
-      <div style="font-weight: 700; margin-bottom: 10px;">Quick Pay by Vehicle ID</div>
-      <div style="display: flex; gap: 8px;">
-        <input type="text" id="manualVehicleId" class="input" placeholder="Enter Vehicle ID (e.g., VID-101)" />
-        <button class="btn btn-sm" onclick="lookupManualVehicle()">Go</button>
-      </div>
-      <div id="recentSection" style="margin-top: 14px; display: none;">
-        <div style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">RECENT / FAVORITE VEHICLES</div>
-        <div id="recentVehiclesList" class="chip-list"></div>
-      </div>
-    </div>
-
-    <!-- Active & Past Tickets -->
-    <div class="card">
-      <div style="font-weight: 700; margin-bottom: 12px;">My Tickets</div>
-      <div id="ticketsContainer" style="color: var(--text-muted); font-size: 0.9rem;">Loading tickets...</div>
-    </div>
-
-    <!-- Transaction Ledger -->
-    <div class="card">
-      <div style="font-weight: 700; margin-bottom: 12px;">Transaction Ledger</div>
-      <div id="ledgerContainer" style="color: var(--text-muted); font-size: 0.9rem;">Loading ledger...</div>
-    </div>
-  </div>
-
-  <!-- QR Scanner Modal -->
-  <div id="scannerModal" class="modal-overlay">
-    <div class="modal-content">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <h3>Scan Vehicle QR Code</h3>
-        <button class="btn btn-secondary btn-sm" onclick="closeScannerModal()">✕</button>
-      </div>
-      <div id="qrReader" style="width: 100%; border-radius: 10px; overflow: hidden;"></div>
-      <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 10px; text-align: center;">
-        Point your camera at the Tick.IT QR code inside the bus.
-      </p>
-    </div>
-  </div>
-
-  <!-- Multi-Passenger Payment Modal -->
-  <div id="paymentModal" class="modal-overlay">
-    <div class="modal-content">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <h3>Confirm Ticket Payment</h3>
-        <button class="btn btn-secondary btn-sm" onclick="closePaymentModal()">✕</button>
-      </div>
-      <div id="payAlert" class="alert-msg"></div>
-
-      <div style="background: #0b0f19; padding: 14px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 14px;">
-        <div id="payRouteName" style="font-weight: 700; font-size: 1.05rem;">Route Name</div>
-        <div id="payVehicleMeta" style="font-size: 0.85rem; color: var(--text-muted);">VID-101 • WB-04-1234</div>
-        <div style="margin-top: 8px; font-size: 0.9rem;">Base Fare: <strong id="payBaseFare">₹20.00</strong></div>
-      </div>
-
-      <label style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;">SELECT PASSENGERS</label>
-      <div class="multiplier-group">
-        <button type="button" class="multiplier-btn active" id="mult1" onclick="setMultiplier(1)">1x Rider</button>
-        <button type="button" class="multiplier-btn" id="mult2" onclick="setMultiplier(2)">2x Riders</button>
-        <button type="button" class="multiplier-btn" id="mult3" onclick="setMultiplier(3)">3x Riders</button>
-      </div>
-
-      <div style="display: flex; justify-content: space-between; align-items: center; margin: 16px 0; font-size: 1.15rem; font-weight: 800;">
-        <span>Total Payable:</span>
-        <span id="payTotalAmount" style="color: var(--primary);">₹20.00</span>
-      </div>
-
-      <button id="confirmPayBtn" class="btn" onclick="submitPayment()">Pay & Generate Ticket</button>
-    </div>
-  </div>
-
-  <!-- Active Ticket QR & Share Modal -->
-  <div id="ticketViewModal" class="modal-overlay">
-    <div class="modal-content" style="text-align: center;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <h3 id="viewTicketId">TK-XXXX</h3>
-        <button class="btn btn-secondary btn-sm" onclick="closeTicketViewModal()">✕</button>
-      </div>
-      <span id="viewTicketBadge" class="badge badge-valid">VALID</span>
-      <div id="viewTicketRoute" style="font-weight: 700; margin-top: 10px; font-size: 1.05rem;"></div>
-      <div id="viewTicketMeta" style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 10px;"></div>
-
-      <div id="ticketQrBox" class="qr-box"></div>
-
-      <div id="viewTicketExpiry" style="font-size: 0.8rem; color: var(--text-muted); margin: 10px 0 16px;"></div>
-
-      <button class="btn btn-secondary" onclick="shareActiveTicket()">📤 Share Ticket</button>
-    </div>
-  </div>
-
-  <!-- Wallet Top-Up Modal -->
-  <div id="topupModal" class="modal-overlay">
-    <div class="modal-content">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-        <h3>Add Wallet Funds</h3>
-        <button class="btn btn-secondary btn-sm" onclick="closeTopupModal()">✕</button>
-      </div>
-      <div class="multiplier-group">
-        <button class="multiplier-btn" onclick="setTopupAmount(50)">+₹50</button>
-        <button class="multiplier-btn" onclick="setTopupAmount(100)">+₹100</button>
-        <button class="multiplier-btn" onclick="setTopupAmount(200)">+₹200</button>
-      </div>
-      <div class="input-group">
-        <label>Amount (₹)</label>
-        <input type="number" id="topupInput" class="input" value="100" min="1" max="10000" />
-      </div>
-      <button class="btn" onclick="submitTopup()">Confirm Top-Up</button>
-    </div>
-  </div>
-
-  <script>
-    const token = localStorage.getItem('tickit_token');
-    if (!token) window.location.href = '/index.html';
-
-    let currentUser = null;
-    let selectedVehicle = null;
-    let selectedMultiplier = 1;
-    let activeModalTicket = null;
-    let html5QrCode = null;
-    let allTickets = [];
-
-    function authHeaders() {
-      return {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      };
-    }
-
-    async function loadDashboard() {
-      try {
-        const res = await fetch('/api/user/me', { headers: authHeaders() });
-        if (res.status === 401) return logout();
-        const data = await res.json();
-        currentUser = data.user;
-        document.getElementById('userNameDisplay').textContent = currentUser.name;
-        updateBalanceUI(currentUser.balance);
-        renderRecentVehicles(data.recentVehiclesDetails || []);
-        await Promise.all([loadTickets(), loadLedger()]);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    function updateBalanceUI(balance) {
-      const bal = parseFloat(balance || 0);
-      document.getElementById('walletBalance').textContent = `₹${bal.toFixed(2)}`;
-      document.getElementById('lowBalanceBanner').style.display = bal < 20.0 ? 'flex' : 'none';
-    }
-
-    function renderRecentVehicles(vehicles) {
-      const section = document.getElementById('recentSection');
-      const list = document.getElementById('recentVehiclesList');
-      const localIds = JSON.parse(localStorage.getItem('tickit_recent_vehicles') || '[]');
-
-      if (!vehicles.length && !localIds.length) {
-        section.style.display = 'none';
-        return;
-      }
-      section.style.display = 'block';
-      list.innerHTML = '';
-
-      if (vehicles.length) {
-        vehicles.forEach(v => {
-          const btn = document.createElement('button');
-          btn.className = 'chip';
-          btn.innerHTML = `🚍 <strong>${v.vehicleId}</strong> <span>${v.routeName}</span>`;
-          btn.onclick = () => fetchAndOpenVehicle(v.vehicleId);
-          list.appendChild(btn);
-        });
-      } else {
-        localIds.slice(0, 3).forEach(vid => {
-          const btn = document.createElement('button');
-          btn.className = 'chip';
-          btn.innerHTML = `🚍 <strong>${vid}</strong>`;
-          btn.onclick = () => fetchAndOpenVehicle(vid);
-          list.appendChild(btn);
-        });
-      }
-    }
-
-    async function fetchAndOpenVehicle(vehicleId) {
-      try {
-        const res = await fetch(`/api/vehicle/${encodeURIComponent(vehicleId)}`, { headers: authHeaders() });
-        const data = await res.json();
-        if (!res.ok) {
-          alert(data.error || 'Vehicle not found.');
-          return;
-        }
-        openPaymentModal(data.vehicle);
-      } catch (e) {
-        alert('Failed to fetch vehicle details.');
-      }
-    }
-
-    function lookupManualVehicle() {
-      const vid = document.getElementById('manualVehicleId').value.trim().toUpperCase();
-      if (!vid) return;
-      fetchAndOpenVehicle(vid);
-    }
-
-    // --- QR Scanner Logic ---
-    function openScannerModal() {
-      document.getElementById('scannerModal').classList.add('open');
-      html5QrCode = new Html5Qrcode("qrReader");
-      html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 240, height: 240 } },
-        (decodedText) => {
-          let vid = decodedText.trim();
-          try {
-            const parsed = JSON.parse(decodedText);
-            if (parsed.vehicleId) vid = parsed.vehicleId;
-          } catch (_) {}
-          closeScannerModal();
-          fetchAndOpenVehicle(vid);
-        },
-        () => {}
-      ).catch(err => {
-        console.warn("Camera access failed:", err);
-      });
-    }
-
-    function closeScannerModal() {
-      document.getElementById('scannerModal').classList.remove('open');
-      if (html5QrCode) {
-        html5QrCode.stop().then(() => html5QrCode.clear()).catch(() => {});
-        html5QrCode = null;
-      }
-    }
-
-    // --- Multi-Passenger Payment Flow ---
-    function openPaymentModal(vehicle) {
-      selectedVehicle = vehicle;
-      selectedMultiplier = 1;
-      document.getElementById('payRouteName').textContent = vehicle.routeName;
-      document.getElementById('payVehicleMeta').textContent = `${vehicle.vehicleId} • ${vehicle.vehicleNumber}`;
-      document.getElementById('payBaseFare').textContent = `₹${ parseFloat(vehicle.baseFare).toFixed(2) }`;
-
-      const alertEl = document.getElementById('payAlert');
-      const btn = document.getElementById('confirmPayBtn');
-
-      if (vehicle.isOffDuty) {
-        alertEl.textContent = '⚠️ Vehicle Off-Duty: This vehicle is currently out of service.';
-        alertEl.className = 'alert-msg alert-error';
-        btn.disabled = true;
-      } else {
-        alertEl.className = 'alert-msg';
-        alertEl.textContent = '';
-        btn.disabled = false;
-      }
-
-      setMultiplier(1);
-      document.getElementById('paymentModal').classList.add('open');
-    }
-
-    function closePaymentModal() {
-      document.getElementById('paymentModal').classList.remove('open');
-    }
-
-    function setMultiplier(n) {
-      selectedMultiplier = n;
-      [1, 2, 3].forEach(i => {
-        document.getElementById(`mult${i}`).classList.toggle('active', i === n);
-      });
-      if (selectedVehicle) {
-        const total = parseFloat(selectedVehicle.baseFare) * n;
-        document.getElementById('payTotalAmount').textContent = `₹${total.toFixed(2)}`;
-      }
-    }
-
-    async function submitPayment() {
-      if (!selectedVehicle) return;
-      const btn = document.getElementById('confirmPayBtn');
-      const alertEl = document.getElementById('payAlert');
-      btn.disabled = true;
-
-      try {
-        const res = await fetch('/api/pay', {
-          method: 'POST',
-          headers: authHeaders(),
-          body: JSON.stringify({
-            vehicleId: selectedVehicle.vehicleId,
-            passengerCount: selectedMultiplier
-          })
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          alertEl.textContent = data.error || 'Payment failed.';
-          alertEl.className = 'alert-msg alert-error';
-          btn.disabled = false;
-          return;
-        }
-        localStorage.setItem('tickit_recent_vehicles', JSON.stringify(data.recentVehicles || []));
-        updateBalanceUI(data.balance);
-        closePaymentModal();
-        await loadDashboard();
-        openTicketViewModal(data.ticket);
-      } catch (e) {
-        alertEl.textContent = 'Network error processing payment.';
-        alertEl.className = 'alert-msg alert-error';
-        btn.disabled = false;
-      }
-    }
-
-    // --- Tickets & Native Web Share ---
-    async function loadTickets() {
-      const res = await fetch('/api/tickets', { headers: authHeaders() });
-      const data = await res.json();
-      allTickets = data.tickets || [];
-      const container = document.getElementById('ticketsContainer');
-      if (!allTickets.length) {
-        container.innerHTML = '<p>No tickets purchased yet.</p>';
-        return;
-      }
-      container.innerHTML = allTickets.map(t => `
-        <div class="list-item" style="cursor: pointer;" onclick="openTicketById('${t.ticketId}')">
-          <div>
-            <div style="font-weight: 700;">${t.routeName || t.vehicleId} <span style="font-size: 0.8rem; color: var(--text-muted);">(${t.passengerCount}x Pax)</span></div>
-            <div style="font-size: 0.78rem; color: var(--text-muted);">${t.ticketId} • ${new Date(t.issuedAt).toLocaleString()}</div>
-          </div>
-          <div style="text-align: right;">
-            <div style="font-weight: 700;">₹${parseFloat(t.farePaid).toFixed(2)}</div>
-            <span class="badge badge-${t.status.toLowerCase()}">${t.status}</span>
-          </div>
+    <header class="nav">
+        <a class="brand" href="/dashboard.html">Tick.IT</a>
+        <div class="nav-right">
+            <div class="nav-meta">
+                <div class="nm-name" id="userName">Loading...</div>
+                <div class="nm-sub">Rider</div>
+            </div>
+            <button class="logout-btn" onclick="logout()">Log out</button>
         </div>
-      `).join('');
-    }
+    </header>
 
-    function openTicketById(ticketId) {
-      const t = allTickets.find(x => x.ticketId === ticketId);
-      if (t) openTicketViewModal(t);
-    }
+    <div class="container">
+        <div class="page-title">
+            <p class="eyebrow">Wallet balance</p>
+            <h1>₹<span id="walletBalance">0</span></h1>
+            <p>Your transport payment hub</p>
+        </div>
 
-    function openTicketViewModal(ticket) {
-      activeModalTicket = ticket;
-      document.getElementById('viewTicketId').textContent = ticket.ticketId;
-      const badge = document.getElementById('viewTicketBadge');
-      badge.textContent = ticket.status;
-      badge.className = `badge badge-${ticket.status.toLowerCase()}`;
-
-      document.getElementById('viewTicketRoute').textContent = ticket.routeName || ticket.vehicleId;
-      document.getElementById('viewTicketMeta').textContent = `${ticket.passengerCount} Passenger(s) • Fare Paid: ₹${parseFloat(ticket.farePaid).toFixed(2)}`;
-      document.getElementById('viewTicketExpiry').textContent = `Expires UTC: ${ticket.expiresAt} (${new Date(ticket.expiresAt).toLocaleTimeString()})`;
-
-      const qrContainer = document.getElementById('ticketQrBox');
-      qrContainer.innerHTML = '';
-      new QRCode(qrContainer, {
-        text: JSON.stringify({ ticketId: ticket.ticketId }),
-        width: 180,
-        height: 180
-      });
-
-      document.getElementById('ticketViewModal').classList.add('open');
-    }
-
-    function closeTicketViewModal() {
-      document.getElementById('ticketViewModal').classList.remove('open');
-    }
-
-    async function shareActiveTicket() {
-      if (!activeModalTicket) return;
-      const ticket = activeModalTicket;
-      const text = `Tick.IT Ticket ${ticket.ticketId}\nRoute: ${ticket.routeName || ticket.vehicleId}\nPassengers: ${ticket.passengerCount}\nValid Until: ${new Date(ticket.expiresAt).toLocaleTimeString()}`;
-      if (navigator.share) {
-        try {
-          await navigator.share({ title: 'Tick.IT Ticket', text: text });
-        } catch (_) {}
-      } else {
-        await navigator.clipboard.writeText(text);
-        alert('Ticket details copied to clipboard!');
-      }
-    }
-
-    // --- Wallet Top-Up & Transaction Ledger ---
-    function openTopupModal() {
-      document.getElementById('topupModal').classList.add('open');
-    }
-
-    function closeTopupModal() {
-      document.getElementById('topupModal').classList.remove('open');
-    }
-
-    function setTopupAmount(amt) {
-      document.getElementById('topupInput').value = amt;
-    }
-
-    async function submitTopup() {
-      const amount = parseFloat(document.getElementById('topupInput').value);
-      const res = await fetch('/api/wallet/topup', {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify({ amount })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        alert(data.error || 'Top-up failed.');
-        return;
-      }
-      updateBalanceUI(data.balance);
-      closeTopupModal();
-      loadLedger();
-    }
-
-    async function loadLedger() {
-      const res = await fetch('/api/transactions', { headers: authHeaders() });
-      const data = await res.json();
-      const txns = data.transactions || [];
-      const container = document.getElementById('ledgerContainer');
-      if (!txns.length) {
-        container.innerHTML = '<p>No transactions recorded yet.</p>';
-        return;
-      }
-      container.innerHTML = txns.map(tx => {
-        const isCredit = tx.type === 'CREDIT';
-        return `
-          <div class="list-item">
-            <div>
-              <div style="font-weight: 600;">${tx.description}</div>
-              <div style="font-size: 0.75rem; color: var(--text-muted);">${tx.transactionId} • ${new Date(tx.timestamp).toLocaleString()}</div>
+        <div class="dashboard-grid">
+            <!-- Current Valid Ticket Section -->
+            <div class="card">
+                <h3>Current ticket</h3>
+                <div id="currentTicket" class="ticket-card" style="display: none;">
+                    <div class="ticket-header">
+                        <span class="ticket-id"></span>
+                        <span class="ticket-status"></span>
+                    </div>
+                    <div class="ticket-details">
+                        <p><strong>Vehicle ID:</strong> <span class="vehicle-id"></span></p>
+                        <p><strong>Fare Paid:</strong> ₹<span class="fare-paid"></span></p>
+                        <p><strong>Expires At:</strong> <span class="expires-at"></span></p>
+                    </div>
+                    <div class="time-remaining"></div>
+                </div>
+                <div id="noCurrentTicket" class="empty-state">
+                    <h4>No Active Ticket</h4>
+                    <p>Purchase a ticket to see it here</p>
+                </div>
             </div>
-            <div style="font-weight: 700; color: ${isCredit ? '#34d399' : '#f87171'};">
-              ${isCredit ? '+' : '-'}₹${parseFloat(tx.amount).toFixed(2)}
+
+            <!-- Fare Check and Payment Section -->
+            <div class="card">
+                <h3>Buy a ticket</h3>
+                <div class="fare-input-group">
+                    <input type="text" id="vehicleInput" placeholder="Enter Vehicle ID (e.g., BUS001)">
+                    <button class="btn btn-secondary" onclick="checkFare()">Check fare</button>
+                </div>
+                
+                <div id="fareDisplay" class="fare-display" style="display: none;">
+                    <p class="eyebrow">Fare</p>
+                    <div class="fare-amount">₹<span id="fareAmount">0</span></div>
+                    <p>Validity: <span id="validityMinutes">30</span> minutes</p>
+                    <button class="btn btn-lg" onclick="makePayment()">Pay now</button>
+                </div>
+                
+                <div id="fareError" class="error-message" style="display: none;"></div>
+                <div id="paymentSuccess" class="success-message" style="display: none;"></div>
             </div>
-          </div>
-        `;
-      }).join('');
-    }
 
-    function logout() {
-      localStorage.removeItem('tickit_token');
-      localStorage.removeItem('tickit_user');
-      window.location.href = '/index.html';
-    }
+            <!-- Wallet Management Section -->
+            <div class="card">
+                <h3>Wallet</h3>
+                <div class="balance-row">Current balance <strong>₹<span id="currentBalance">0</span></strong></div>
+                
+                <div class="wallet-actions">
+                    <input type="number" class="fund-input" id="fundAmount" placeholder="Enter amount to add" min="1">
+                    <button class="btn" onclick="addFunds()">Add funds</button>
+                </div>
+                
+                <div id="walletMessage"></div>
+            </div>
+        </div>
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
-    }
+        <!-- Ticket History Section -->
+        <div class="card">
+            <h3>Ticket history</h3>
+            <div class="filter-buttons">
+                <button class="active" onclick="filterTickets('all', event)">All tickets</button>
+                <button onclick="filterTickets('valid', event)">Valid</button>
+                <button onclick="filterTickets('expired', event)">Expired</button>
+            </div>
+            <div id="ticketHistory">
+                <div class="loading">Loading tickets...</div>
+            </div>
+        </div>
+    </div>
 
-    loadDashboard();
-  </script>
+    <script>
+        const API_BASE_URL = '/api';
+        let currentUserId = localStorage.getItem('userId');
+        let selectedVehicleId = '';
+        let currentFare = 0;
+        let allTickets = [];
+        let currentTicketTimer = null;
+
+        // Check if user is logged in
+        if (!currentUserId) {
+            window.location.href = 'index.html';
+        }
+
+        // Check fare for selected vehicle
+        async function checkFare() {
+            const vehicleId = document.getElementById('vehicleInput').value.trim();
+            if (!vehicleId) {
+                showError('fareError', 'Please enter a vehicle ID');
+                return;
+            }
+            
+            clearMessages();
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/get-vehicle-fare/${vehicleId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    selectedVehicleId = vehicleId;
+                    currentFare = data.fare;
+                    document.getElementById('fareAmount').textContent = data.fare;
+                    document.getElementById('validityMinutes').textContent = data.validityMinutes;
+                    document.getElementById('fareDisplay').style.display = 'block';
+                } else {
+                    showError('fareError', data.error || 'Vehicle not found');
+                }
+            } catch (error) {
+                console.error('Error fetching fare:', error);
+                showError('fareError', 'Failed to fetch fare information');
+            }
+        }
+
+        // Make payment
+        async function makePayment() {
+            if (!selectedVehicleId || !currentFare) {
+                showError('fareError', 'Please check fare first');
+                return;
+            }
+            
+            // Check if user has sufficient balance
+            const currentBalance = parseInt(document.getElementById('walletBalance').textContent);
+            if (currentBalance < currentFare) {
+                showError('fareError', 'Insufficient balance. Please add funds to your wallet.');
+                return;
+            }
+            
+            clearMessages();
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/pay`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: currentUserId,
+                        vehicleId: selectedVehicleId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess('paymentSuccess', `Payment successful! Ticket ID: ${data.ticketId.substring(0, 8)}`);
+                    document.getElementById('fareDisplay').style.display = 'none';
+                    document.getElementById('vehicleInput').value = '';
+                    selectedVehicleId = '';
+                    currentFare = 0;
+                    
+                    // Refresh data
+                    loadUserData();
+                    loadCurrentTicket();
+                    loadTicketHistory();
+                } else {
+                    showError('fareError', data.error || 'Payment failed');
+                }
+            } catch (error) {
+                console.error('Error making payment:', error);
+                showError('fareError', 'Payment failed. Please try again.');
+            }
+        }
+
+        // Load current valid ticket
+        async function loadCurrentTicket() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/get-user-tickets/${currentUserId}`);
+                const tickets = await response.json();
+                
+                const validTicket = tickets.find(ticket => ticket.isValid);
+                
+                if (validTicket) {
+                    displayCurrentTicket(validTicket);
+                    startTicketTimer(validTicket);
+                    document.getElementById('currentTicket').style.display = 'block';
+                    document.getElementById('noCurrentTicket').style.display = 'none';
+                } else {
+                    document.getElementById('currentTicket').style.display = 'none';
+                    document.getElementById('noCurrentTicket').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading current ticket:', error);
+                document.getElementById('noCurrentTicket').innerHTML = '<h4>Error</h4><p>Failed to load ticket information</p>';
+            }
+        }
+
+        // Display current ticket
+        function displayCurrentTicket(ticket) {
+            const ticketElement = document.getElementById('currentTicket');
+            ticketElement.querySelector('.ticket-id').textContent = `#${ticket.ticketId.substring(0, 8).toUpperCase()}`;
+            
+            const statusElement = ticketElement.querySelector('.ticket-status');
+            statusElement.textContent = ticket.isValid ? 'VALID' : 'EXPIRED';
+            statusElement.className = `ticket-status ${ticket.isValid ? 'valid' : 'expired'}`;
+            
+            ticketElement.querySelector('.vehicle-id').textContent = ticket.vehicleId;
+            ticketElement.querySelector('.fare-paid').textContent = ticket.farePaid;
+            
+            if (ticket.expiresAt) {
+                ticketElement.querySelector('.expires-at').textContent = new Date(ticket.expiresAt).toLocaleString();
+            }
+            
+            ticketElement.className = `ticket-card ${ticket.isValid ? 'valid' : 'expired'}`;
+        }
+
+        // Start countdown timer for current ticket
+        function startTicketTimer(ticket) {
+            if (currentTicketTimer) {
+                clearInterval(currentTicketTimer);
+            }
+            
+            const timerElement = document.querySelector('.time-remaining');
+            
+            const updateTimer = () => {
+                if (!ticket.expiresAt) {
+                    timerElement.textContent = 'No expiry time';
+                    return;
+                }
+                
+                const now = new Date().getTime();
+                const expiry = new Date(ticket.expiresAt).getTime();
+                const timeLeft = expiry - now;
+                
+                if (timeLeft > 0) {
+                    const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                    
+                    if (hours > 0) {
+                        timerElement.textContent = `${hours}h ${minutes}m ${seconds}s remaining`;
+                    } else {
+                        timerElement.textContent = `${minutes}m ${seconds}s remaining`;
+                    }
+                    timerElement.className = 'time-remaining';
+                } else {
+                    timerElement.textContent = 'Expired';
+                    timerElement.className = 'time-remaining expired';
+                    clearInterval(currentTicketTimer);
+                    loadCurrentTicket(); // Refresh to update status
+                }
+            };
+            
+            updateTimer();
+            currentTicketTimer = setInterval(updateTimer, 1000);
+        }
+
+        // Load and display ticket history
+        async function loadTicketHistory() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/get-user-tickets/${currentUserId}`);
+                allTickets = await response.json();
+                
+                displayTicketHistory(allTickets);
+            } catch (error) {
+                console.error('Error loading ticket history:', error);
+                document.getElementById('ticketHistory').innerHTML = '<div class="error-message">Failed to load ticket history</div>';
+            }
+        }
+
+        // Display ticket history
+        function displayTicketHistory(tickets) {
+            const historyElement = document.getElementById('ticketHistory');
+            
+            if (tickets.length === 0) {
+                historyElement.innerHTML = '<div class="empty-state"><h4>No Tickets Found</h4><p>Your ticket history will appear here</p></div>';
+                return;
+            }
+            
+            historyElement.innerHTML = tickets.map(ticket => {
+                const date = ticket.timestamp && ticket.timestamp.seconds 
+                    ? new Date(ticket.timestamp.seconds * 1000).toLocaleString()
+                    : 'Unknown date';
+                
+                const expiryDate = ticket.expiresAt 
+                    ? new Date(ticket.expiresAt).toLocaleString()
+                    : 'No expiry';
+                
+                return `
+                    <div class="history-item ${ticket.isValid ? 'valid' : 'expired'}">
+                        <div class="history-header">
+                            <span class="ticket-id">#${ticket.ticketId.substring(0, 8).toUpperCase()}</span>
+                            <span class="status ${ticket.isValid ? 'valid' : 'expired'}">${ticket.isValid ? 'VALID' : 'EXPIRED'}</span>
+                        </div>
+                        <div class="history-details">
+                            <p><strong>Vehicle:</strong> ${ticket.vehicleId} | <strong>Fare:</strong> ₹${ticket.farePaid}</p>
+                            <p><strong>Purchased:</strong> ${date}</p>
+                            <p><strong>Expires:</strong> ${expiryDate}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Filter tickets
+        function filterTickets(filter, event) {
+            // Update active button
+            document.querySelectorAll('.filter-buttons button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            let filteredTickets = allTickets;
+            
+            if (filter === 'valid') {
+                filteredTickets = allTickets.filter(ticket => ticket.isValid);
+            } else if (filter === 'expired') {
+                filteredTickets = allTickets.filter(ticket => !ticket.isValid);
+            }
+            
+            displayTicketHistory(filteredTickets);
+        }
+
+        // Add funds to wallet
+        async function addFunds() {
+            const amount = parseInt(document.getElementById('fundAmount').value);
+            
+            if (!amount || amount < 1) {
+                showWalletMessage('Please enter a valid amount', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/add-funds`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: currentUserId,
+                        amount: amount
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showWalletMessage(`₹${amount} added successfully!`, 'success');
+                    document.getElementById('fundAmount').value = '';
+                    loadUserData(); // Refresh wallet balance
+                } else {
+                    showWalletMessage(data.error || 'Failed to add funds', 'error');
+                }
+            } catch (error) {
+                console.error('Error adding funds:', error);
+                showWalletMessage('Failed to add funds. Please try again.', 'error');
+            }
+        }
+
+        // Load user data
+        async function loadUserData() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/get-user-details/${currentUserId}`);
+                const userData = await response.json();
+                
+                if (userData.error) {
+                    throw new Error(userData.error);
+                }
+                
+                document.getElementById('userName').textContent = userData.fullName || 'User';
+                document.getElementById('walletBalance').textContent = userData.walletBalance || 0;
+                document.getElementById('currentBalance').textContent = userData.walletBalance || 0;
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                document.getElementById('userName').textContent = 'Error loading user';
+            }
+        }
+
+        // Utility functions
+        function clearMessages() {
+            document.getElementById('fareError').style.display = 'none';
+            document.getElementById('paymentSuccess').style.display = 'none';
+        }
+
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000);
+        }
+
+        function showSuccess(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000);
+        }
+
+        function showWalletMessage(message, type) {
+            const messageElement = document.getElementById('walletMessage');
+            messageElement.textContent = message;
+            messageElement.className = type === 'error' ? 'error-message' : 'success-message';
+            messageElement.style.display = 'block';
+            setTimeout(() => {
+                messageElement.style.display = 'none';
+            }, 5000);
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('userId');
+                localStorage.removeItem('userToken');
+                localStorage.removeItem('userType');
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+            loadCurrentTicket();
+            loadTicketHistory();
+            
+            // Auto-refresh current ticket every 30 seconds
+            setInterval(loadCurrentTicket, 30000);
+        });
+
+        // Cleanup timer when page is closed
+        window.addEventListener('beforeunload', function() {
+            if (currentTicketTimer) {
+                clearInterval(currentTicketTimer);
+            }
+        });
+    </script>
 </body>
+
 </html>
