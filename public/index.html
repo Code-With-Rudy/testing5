@@ -1,440 +1,178 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tick.IT — Transport Payment App</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="uber.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tick.IT — Smart Transit Payments</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/uber.css" />
+  <!-- Firebase JS SDK for Google OAuth -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 </head>
 <body>
-    <header class="nav">
-        <a class="brand" href="/index.html">Tick.IT</a>
-        <div class="nav-right">
-            <button class="btn btn-secondary" type="button" onclick="document.getElementById('auth').scrollIntoView({behavior:'smooth'}); document.querySelector('[data-tab=user-login]').click();">Log in</button>
-            <button class="btn" type="button" onclick="document.getElementById('auth').scrollIntoView({behavior:'smooth'}); document.querySelector('[data-tab=user-register]').click();">Sign up</button>
+  <div class="app-container" style="padding-top: 48px;">
+    <div style="text-align: center; margin-bottom: 28px;">
+      <div class="brand" style="justify-content: center; font-size: 2rem;">
+        🚍 Tick<span>.IT</span>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.92rem; margin-top: 4px;">
+        Instant QR Transit Ticketing & Operator Ledger
+      </p>
+    </div>
+
+    <div class="card">
+      <!-- Role & Mode Switchers -->
+      <div class="multiplier-group" style="grid-template-columns: 1fr 1fr; margin-bottom: 18px;">
+        <button id="tabLogin" class="multiplier-btn active" onclick="switchMode('login')">Sign In</button>
+        <button id="tabRegister" class="multiplier-btn" onclick="switchMode('register')">Create Account</button>
+      </div>
+
+      <div id="authAlert" class="alert-msg"></div>
+
+      <form id="authForm" onsubmit="handleAuthSubmit(event)">
+        <div id="nameGroup" class="input-group" style="display: none;">
+          <label>Full Name</label>
+          <input type="text" id="nameInput" class="input" placeholder="e.g., Rudranil Goswami" />
         </div>
-    </header>
 
-    <main class="hero">
-        <section>
-            <h1>Pay your fare. Skip the change.</h1>
-            <p class="lead">Tick.IT turns every bus ride into a digital ticket with a live countdown. Passengers pay from a wallet; owners watch revenue in real time.</p>
-            <div class="hero-art" aria-hidden="true">
-                <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="400" height="300" fill="#efefef"/>
-                    <rect y="214" width="400" height="86" fill="#e2e2e2"/>
-                    <rect y="252" width="400" height="4" fill="#fff" opacity=".8"/>
-                    <rect x="60" y="96" width="250" height="110" rx="16" fill="#000"/>
-                    <rect x="78" y="112" width="44" height="34" rx="6" fill="#efefef"/>
-                    <rect x="134" y="112" width="44" height="34" rx="6" fill="#efefef"/>
-                    <rect x="190" y="112" width="44" height="34" rx="6" fill="#efefef"/>
-                    <rect x="246" y="112" width="48" height="76" rx="6" fill="#4b4b4b"/>
-                    <rect x="78" y="160" width="156" height="8" rx="4" fill="#fff"/>
-                    <circle cx="120" cy="208" r="20" fill="#282828" stroke="#fff" stroke-width="6"/>
-                    <circle cx="260" cy="208" r="20" fill="#282828" stroke="#fff" stroke-width="6"/>
-                    <rect x="300" y="56" width="68" height="84" rx="12" fill="#fff"/>
-                    <rect x="312" y="70" width="44" height="6" rx="3" fill="#000"/>
-                    <rect x="312" y="84" width="30" height="6" rx="3" fill="#afafaf"/>
-                    <rect x="312" y="104" width="44" height="22" rx="11" fill="#000"/>
-                </svg>
-            </div>
-        </section>
-
-        <section class="auth-card" id="auth">
-            <div class="inner">
-                <div class="tabs" role="tablist">
-                    <button class="tab active" data-tab="user-login" onclick="showTab('user-login', event)">Rider log in</button>
-                    <button class="tab" data-tab="user-register" onclick="showTab('user-register', event)">Rider sign up</button>
-                    <button class="tab" data-tab="owner-login" onclick="showTab('owner-login', event)">Owner log in</button>
-                    <button class="tab" data-tab="owner-register" onclick="showTab('owner-register', event)">Owner sign up</button>
-                </div>
-
-                <!-- User Login -->
-                <div id="user-login" class="form-container active">
-                    <h2>Welcome back</h2>
-                    <p class="sub">Check your live ticket, view fares and manage your wallet.</p>
-                    <form id="userLoginForm">
-                        <div class="form-group">
-                            <label for="userEmail">Email address</label>
-                            <input type="email" id="userEmail" name="email" required autocomplete="email">
-                        </div>
-                        <div class="form-group">
-                            <label for="userPassword">Password</label>
-                            <input type="password" id="userPassword" name="password" required autocomplete="current-password">
-                        </div>
-                        <button type="submit" class="btn btn-lg btn-block">Log in as rider</button>
-                        <div class="error" id="userLoginError"></div>
-                        <div class="success" id="userLoginSuccess"></div>
-                    </form>
-                    <div class="loading" id="userLoginLoading"></div>
-                </div>
-
-                <!-- User Registration -->
-                <div id="user-register" class="form-container">
-                    <h2>Ride with Tick.IT</h2>
-                    <p class="sub">Instant payments, real-time ticket validation, every journey tracked.</p>
-                    <form id="userRegisterForm">
-                        <div class="form-group">
-                            <label for="userRegName">Full name</label>
-                            <input type="text" id="userRegName" name="fullName" required autocomplete="name">
-                        </div>
-                        <div class="form-group">
-                            <label for="userRegEmail">Email address</label>
-                            <input type="email" id="userRegEmail" name="email" required autocomplete="email">
-                        </div>
-                        <div class="form-group">
-                            <label for="userRegPassword">Password</label>
-                            <input type="password" id="userRegPassword" name="password" required minlength="6" autocomplete="new-password">
-                            <small>At least 6 characters</small>
-                        </div>
-                        <button type="submit" class="btn btn-lg btn-block">Create rider account</button>
-                        <div class="error" id="userRegisterError"></div>
-                        <div class="success" id="userRegisterSuccess"></div>
-                    </form>
-                    <div class="loading" id="userRegisterLoading"></div>
-                </div>
-
-                <!-- Owner Login -->
-                <div id="owner-login" class="form-container">
-                    <h2>Owner log in</h2>
-                    <p class="sub">Active and expired tickets, passenger history, fare and validity settings.</p>
-                    <form id="ownerLoginForm">
-                        <div class="form-group">
-                            <label for="ownerEmail">Email address</label>
-                            <input type="email" id="ownerEmail" name="email" required autocomplete="email">
-                        </div>
-                        <div class="form-group">
-                            <label for="ownerPassword">Password</label>
-                            <input type="password" id="ownerPassword" name="password" required autocomplete="current-password">
-                        </div>
-                        <button type="submit" class="btn btn-lg btn-block">Log in as owner</button>
-                        <div class="error" id="ownerLoginError"></div>
-                        <div class="success" id="ownerLoginSuccess"></div>
-                    </form>
-                    <div class="loading" id="ownerLoginLoading"></div>
-                </div>
-
-                <!-- Owner Registration -->
-                <div id="owner-register" class="form-container">
-                    <h2>Drive with Tick.IT</h2>
-                    <p class="sub">Set your fare, choose how long tickets last, and track daily earnings.</p>
-                    <form id="ownerRegisterForm">
-                        <div class="form-group">
-                            <label for="ownerRegName">Full name</label>
-                            <input type="text" id="ownerRegName" name="fullName" required autocomplete="name">
-                        </div>
-                        <div class="form-group">
-                            <label for="ownerRegEmail">Email address</label>
-                            <input type="email" id="ownerRegEmail" name="email" required autocomplete="email">
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="vehicleId">Vehicle ID</label>
-                                <input type="text" id="vehicleId" name="vehicleId" placeholder="e.g., BUS001" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="fixedFare">Fixed fare (₹)</label>
-                                <input type="number" id="fixedFare" name="fixedFare" value="10" min="1" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="ownerRegPassword">Password</label>
-                            <input type="password" id="ownerRegPassword" name="password" required minlength="6" autocomplete="new-password">
-                            <small>At least 6 characters</small>
-                        </div>
-                        <button type="submit" class="btn btn-lg btn-block">Create owner account</button>
-                        <div class="error" id="ownerRegisterError"></div>
-                        <div class="success" id="ownerRegisterSuccess"></div>
-                    </form>
-                    <div class="loading" id="ownerRegisterLoading"></div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <section class="band-dark">
-        <div class="inner">
-            <h2>Everything a ride needs</h2>
-            <div class="feature-grid">
-                <div class="feature-card"><div class="num">01</div><h4>Smart ticketing</h4><p>Digital tickets with real-time validity checks and a live countdown.</p></div>
-                <div class="feature-card"><div class="num">02</div><h4>Digital wallet</h4><p>Top up once and pay in a tap with instant transaction processing.</p></div>
-                <div class="feature-card"><div class="num">03</div><h4>Owner analytics</h4><p>Ticket history, passenger details and revenue tracking in one place.</p></div>
-                <div class="feature-card"><div class="num">04</div><h4>Flexible settings</h4><p>Set your own fare and ticket validity, whenever you need.</p></div>
-            </div>
+        <div class="input-group">
+          <label>Email Address</label>
+          <input type="email" id="emailInput" class="input" placeholder="you@example.com" required />
         </div>
-    </section>
 
-    <footer class="footer">
-        <div class="inner"><a class="brand" href="/index.html" style="color:#fff">Tick.IT</a><span>Smart transport payments</span></div>
-    </footer>
+        <div class="input-group">
+          <label>Password</label>
+          <input type="password" id="passwordInput" class="input" placeholder="••••••••" required />
+        </div>
 
-    <script>
-        const API_BASE_URL = '/api';
+        <div class="input-group">
+          <label>Account Role</label>
+          <select id="roleInput" class="input">
+            <option value="passenger">Passenger / Rider</option>
+            <option value="owner">Vehicle Owner / Driver</option>
+          </select>
+        </div>
 
-        // Tab switching functionality
-        function showTab(tabName, ev) {
-            // Hide all form containers
-            document.querySelectorAll('.form-container').forEach(container => {
-                container.classList.remove('active');
-            });
-            
-            // Remove active class from all tabs
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Show selected form container
-            document.getElementById(tabName).classList.add('active');
-            
-            // Mark the matching tab active
-            const activeTab = document.querySelector(`.tab[data-tab="${tabName}"]`);
-            if (activeTab) activeTab.classList.add('active');
-            
-            // Clear any previous messages
-            clearMessages();
-        }
+        <button type="submit" id="submitBtn" class="btn" style="margin-top: 8px;">Sign In</button>
+      </form>
 
-        // Clear error and success messages
-        function clearMessages() {
-            document.querySelectorAll('.error, .success').forEach(msg => {
-                msg.style.display = 'none';
-                msg.textContent = '';
-            });
-        }
+      <div style="display: flex; align-items: center; margin: 18px 0; color: var(--text-muted); font-size: 0.8rem;">
+        <div style="flex: 1; height: 1px; background: var(--border);"></div>
+        <span style="padding: 0 10px;">OR CONTINUE WITH</span>
+        <div style="flex: 1; height: 1px; background: var(--border);"></div>
+      </div>
 
-        // Show loading state
-        function showLoading(formType) {
-            document.getElementById(formType + 'Loading').style.display = 'block';
-            document.querySelector(`#${formType}Form button`).disabled = true;
-        }
+      <button type="button" class="btn btn-secondary" onclick="signInWithGoogle()">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Google Sign-In
+      </button>
+    </div>
+  </div>
 
-        // Hide loading state
-        function hideLoading(formType) {
-            document.getElementById(formType + 'Loading').style.display = 'none';
-            document.querySelector(`#${formType}Form button`).disabled = false;
-        }
+  <script>
+    // Replace with your Firebase Web Config if using live Google Auth popup
+    const firebaseConfig = window.FIREBASE_CONFIG || {
+      apiKey: "YOUR_FIREBASE_API_KEY",
+      authDomain: "your-app.firebaseapp.com",
+      projectId: "your-project-id"
+    };
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    } catch (e) {
+      console.warn("Firebase client init skipped:", e);
+    }
 
-        // Show error message
-        function showError(formType, message) {
-            const errorElement = document.getElementById(formType + 'Error');
-            errorElement.textContent = message;
-            errorElement.style.display = 'block';
-        }
+    let authMode = 'login';
 
-        // Show success message
-        function showSuccess(formType, message) {
-            const successElement = document.getElementById(formType + 'Success');
-            successElement.textContent = message;
-            successElement.style.display = 'block';
-        }
+    function switchMode(mode) {
+      authMode = mode;
+      document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
+      document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
+      document.getElementById('nameGroup').style.display = mode === 'register' ? 'block' : 'none';
+      document.getElementById('submitBtn').textContent = mode === 'login' ? 'Sign In' : 'Create Account';
+      hideAlert();
+    }
 
-        // User Login Form Handler
-        document.getElementById('userLoginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            clearMessages();
-            showLoading('userLogin');
+    function showAlert(msg, isError = true) {
+      const el = document.getElementById('authAlert');
+      el.textContent = msg;
+      el.className = 'alert-msg ' + (isError ? 'alert-error' : 'alert-success');
+    }
 
-            const formData = new FormData(e.target);
-            const userData = Object.fromEntries(formData);
+    function hideAlert() {
+      const el = document.getElementById('authAlert');
+      el.className = 'alert-msg';
+      el.textContent = '';
+    }
 
-            try {
-                const response = await fetch(`${API_BASE_URL}/login/user`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(userData)
-                });
+    function redirectByRole(user) {
+      if (user.role === 'owner') {
+        window.location.href = '/owner_dashboard.html';
+      } else {
+        window.location.href = '/dashboard.html';
+      }
+    }
 
-                const data = await response.json();
+    async function handleAuthSubmit(e) {
+      e.preventDefault();
+      hideAlert();
+      const email = document.getElementById('emailInput').value.trim();
+      const password = document.getElementById('passwordInput').value;
+      const role = document.getElementById('roleInput').value;
+      const name = document.getElementById('nameInput').value.trim();
 
-                if (data.success) {
-                    showSuccess('userLogin', 'Login successful! Redirecting...');
-                    
-                    // Store user data in localStorage
-                    localStorage.setItem('userToken', data.token);
-                    localStorage.setItem('userId', data.uid);
-                    localStorage.setItem('userType', 'user');
-                    
-                    // Redirect to user dashboard after 1.5 seconds
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 1500);
-                } else {
-                    showError('userLogin', data.error || 'Login failed');
-                }
-            } catch (error) {
-                showError('userLogin', 'Network error. Please try again.');
-                console.error('Login error:', error);
-            } finally {
-                hideLoading('userLogin');
-            }
+      const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+      const payload = authMode === 'login' ? { email, password } : { name, email, password, role };
+
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
         });
+        const data = await res.json();
+        if (!res.ok) {
+          showAlert(data.error || 'Authentication failed.');
+          return;
+        }
+        localStorage.setItem('tickit_token', data.token);
+        localStorage.setItem('tickit_user', JSON.stringify(data.user));
+        redirectByRole(data.user);
+      } catch (err) {
+        showAlert('Network error connecting to Tick.IT server.');
+      }
+    }
 
-        // User Registration Form Handler
-        document.getElementById('userRegisterForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            clearMessages();
-            showLoading('userRegister');
+    async function signInWithGoogle() {
+      hideAlert();
+      const role = document.getElementById('roleInput').value;
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        const result = await firebase.auth().signInWithPopup(provider);
+        const idToken = await result.user.getIdToken();
 
-            const formData = new FormData(e.target);
-            const userData = Object.fromEntries(formData);
-
-            // Basic validation
-            if (userData.password.length < 6) {
-                showError('userRegister', 'Password must be at least 6 characters long');
-                hideLoading('userRegister');
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/register/user`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(userData)
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    showSuccess('userRegister', 'Registration successful! You can now login.');
-                    
-                    // Clear form
-                    e.target.reset();
-                    
-                    // Switch to login tab after 2 seconds
-                    setTimeout(() => {
-                        showTab('user-login');
-                    }, 2000);
-                } else {
-                    showError('userRegister', data.error || 'Registration failed');
-                }
-            } catch (error) {
-                showError('userRegister', 'Network error. Please try again.');
-                console.error('Registration error:', error);
-            } finally {
-                hideLoading('userRegister');
-            }
+        const res = await fetch('/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken, role })
         });
+        const data = await res.json();
+        if (!res.ok) {
+          showAlert(data.error || 'Google verification failed.');
+          return;
+        }
+        localStorage.setItem('tickit_token', data.token);
+        localStorage.setItem('tickit_user', JSON.stringify(data.user));
+        redirectByRole(data.user);
+      } catch (err) {
+        showAlert('Google Sign-In requires a configured Firebase project key in index.html: ' + err.message);
+      }
+    }
 
-        // Owner Login Form Handler
-        document.getElementById('ownerLoginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            clearMessages();
-            showLoading('ownerLogin');
-
-            const formData = new FormData(e.target);
-            const ownerData = Object.fromEntries(formData);
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/login/owner`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(ownerData)
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    showSuccess('ownerLogin', 'Login successful! Redirecting...');
-                    
-                    // Store owner data in localStorage
-                    localStorage.setItem('ownerToken', data.token);
-                    localStorage.setItem('ownerId', data.uid);
-                    localStorage.setItem('userType', 'owner');
-                    
-                    // Redirect to owner dashboard after 1.5 seconds
-                    setTimeout(() => {
-                        window.location.href = 'owner_dashboard.html';
-                    }, 1500);
-                } else {
-                    showError('ownerLogin', data.error || 'Login failed');
-                }
-            } catch (error) {
-                showError('ownerLogin', 'Network error. Please try again.');
-                console.error('Owner login error:', error);
-            } finally {
-                hideLoading('ownerLogin');
-            }
-        });
-
-        // Owner Registration Form Handler
-        document.getElementById('ownerRegisterForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            clearMessages();
-            showLoading('ownerRegister');
-
-            const formData = new FormData(e.target);
-            const ownerData = Object.fromEntries(formData);
-
-            // Basic validation
-            if (ownerData.password.length < 6) {
-                showError('ownerRegister', 'Password must be at least 6 characters long');
-                hideLoading('ownerRegister');
-                return;
-            }
-
-            if (parseInt(ownerData.fixedFare) < 1) {
-                showError('ownerRegister', 'Fixed fare must be at least ₹1');
-                hideLoading('ownerRegister');
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/register/owner`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        ...ownerData,
-                        fixedFare: parseInt(ownerData.fixedFare)
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    showSuccess('ownerRegister', 'Registration successful! You can now login.');
-                    
-                    // Clear form
-                    e.target.reset();
-                    
-                    // Switch to owner login tab after 2 seconds
-                    setTimeout(() => {
-                        showTab('owner-login');
-                    }, 2000);
-                } else {
-                    showError('ownerRegister', data.error || 'Registration failed');
-                }
-            } catch (error) {
-                showError('ownerRegister', 'Network error. Please try again.');
-                console.error('Owner registration error:', error);
-            } finally {
-                hideLoading('ownerRegister');
-            }
-        });
-
-        // Check if user is already logged in
-        window.addEventListener('load', function() {
-            const userToken = localStorage.getItem('userToken');
-            const ownerToken = localStorage.getItem('ownerToken');
-            const userType = localStorage.getItem('userType');
-
-            if (userToken && userType === 'user') {
-                window.location.href = 'dashboard.html';
-            } else if (ownerToken && userType === 'owner') {
-                window.location.href = 'owner_dashboard.html';
-            }
-        });
-    </script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  </script>
 </body>
 </html>
-
