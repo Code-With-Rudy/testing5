@@ -1,542 +1,332 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Owner Dashboard - Cholo Pay</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="uber.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tick.IT — Operator Control Panel</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/uber.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
-    <div id="notification-container"></div>
-    <header class="nav dark">
-        <a class="brand" href="/owner_dashboard.html">Tick.IT <span style="font-weight:500;opacity:.6">Owner</span></a>
-        <div class="nav-right">
-            <div class="nav-meta">
-                <div class="nm-name" id="ownerName">Loading...</div>
-                <div class="nm-sub" id="vehicleId" style="color:#afafaf">Vehicle: Loading...</div>
-            </div>
-            <button class="logout-btn" onclick="logout()">Log out</button>
-        </div>
-    </header>
-
-    <div class="container">
-        <div class="page-title">
-            <p class="eyebrow">Total earnings</p>
-            <h1>₹<span id="totalEarnings">0</span></h1>
-            <p>Manage your transport business</p>
-        </div>
-
-        <!-- Analytics Overview -->
-        <div class="analytics-grid">
-            <div class="analytics-card">
-                <div class="analytics-value revenue" id="todayRevenue">₹0</div>
-                <div class="analytics-label">Today's Revenue</div>
-            </div>
-            <div class="analytics-card">
-                <div class="analytics-value tickets" id="activeTicketsCount">0</div>
-                <div class="analytics-label">Active Tickets</div>
-            </div>
-            <div class="analytics-card">
-                <div class="analytics-value passengers" id="totalPassengers">0</div>
-                <div class="analytics-label">Total Passengers</div>
-            </div>
-        </div>
-
-        <div class="dashboard-grid">
-            <!-- Settings Section -->
-            <div class="card">
-                <h3>Business settings</h3>
-                <div class="settings-form">
-                    <div class="form-group">
-                        <label for="fareInput">Fixed fare (₹)</label>
-                        <input type="number" id="fareInput" value="10" min="1" max="1000">
-                        <small>
-                            Current fare amount charged per ticket
-                        </small>
-                    </div>
-                    <div class="form-group">
-                        <label for="validityInput">Ticket validity (minutes)</label>
-                        <input type="number" id="validityInput" value="30" min="5" max="120">
-                        <small>
-                            How long tickets remain valid (5-120 minutes)
-                        </small>
-                    </div>
-                    <div class="btn-row">
-                        <button class="btn" onclick="updateSettings()">Update settings</button>
-                        <button class="btn btn-sync" onclick="syncRevenue()">Sync revenue</button>
-                        <button class="btn btn-secondary" onclick="toggleDebug()">Debug</button>
-                    </div>
-                </div>
-                <div id="settingsMessage"></div>
-                
-                <!-- Debug Panel -->
-                <div id="debugPanel" class="debug-panel">
-                    <h5>Revenue Debug Information:</h5>
-                    <div id="debugContent"></div>
-                </div>
-            </div>
-
-            <!-- Quick Stats -->
-            <div class="card">
-                <h3>Quick statistics</h3>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-value" id="totalTickets">0</div>
-                        <div class="stat-label">Total Tickets</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="expiredTickets">0</div>
-                        <div class="stat-label">Expired Tickets</div>
-                    </div>
-                </div>
-                <div class="metric-box">
-                    <p><strong>Average Daily Revenue:</strong> ₹<span id="avgDailyRevenue">0</span></p>
-                    <p><strong>Revenue per Passenger:</strong> ₹<span id="revenuePerPassenger">0</span></p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Passenger Tickets Section -->
-        <div class="card">
-            <h3>Passengers</h3>
-            <div class="ticket-tabs">
-                <button class="tab-button active" onclick="showTickets('active', event)">
-                    Active Tickets
-                </button>
-                <button class="tab-button" onclick="showTickets('expired', event)">
-                    Expired Tickets
-                </button>
-                <button class="tab-button" onclick="showTickets('all', event)">
-                    All Tickets
-                </button>
-            </div>
-            
-            <div id="ticketsDisplay">
-                <div class="loading">Loading passenger data...</div>
-            </div>
-        </div>
+  <div class="app-container wide-container">
+    <div class="topbar">
+      <div class="brand">🚍 Tick<span>.IT</span> <small style="font-size: 0.75rem; color: var(--text-muted); margin-left: 6px;">OPERATOR</small></div>
+      <button class="btn btn-secondary btn-sm" onclick="logout()">Sign Out</button>
     </div>
 
-    <script>
-        const API_BASE_URL = '/api';
-        let currentOwnerId = localStorage.getItem('ownerId');
-        let currentTickets = [];
-        let debugMode = false;
-        let lastKnownTicketCount = 0;
+    <!-- Earnings & Primary Actions -->
+    <div class="card wallet-card">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <div style="font-size: 0.8rem; color: #a7f3d0; font-weight: 600;">TOTAL VEHICLE REVENUE</div>
+          <div id="ownerEarnings" class="balance-amount">₹0.00</div>
+          <div id="ownerStatsSub" style="font-size: 0.85rem; color: #d1fae5;">0 Tickets • 0 Passengers</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; min-width: 190px;">
+          <button class="btn" onclick="openDriverScanner()">📷 Scan Passenger Ticket</button>
+          <button class="btn btn-secondary" onclick="exportEarningsCSV()">📥 Export CSV Report</button>
+        </div>
+      </div>
+    </div>
 
-        // Check if owner is logged in
-        if (!currentOwnerId) {
-            console.error("Owner ID not found. Please log in.");
-            document.body.innerHTML = `<div class="error-message" style="margin: 24px;">Owner not authenticated. Please <a href="/index.html">log in</a>.</div>`;
-        }
+    <!-- Off-Duty Operational Switch -->
+    <div class="card">
+      <div class="switch-row">
+        <div>
+          <div style="font-weight: 700;">Service Status (<span id="dutyStatusText" style="color: var(--primary);">ACTIVE ON-DUTY</span>)</div>
+          <div style="font-size: 0.82rem; color: var(--text-muted);">Toggle Off-Duty to immediately block incoming passenger payments.</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="offDutyToggle" onchange="toggleOffDuty(this.checked)" />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
 
-        /**
-         * [IMPROVED] Parses various date string formats reliably.
-         * Handles ISO 8601, Firestore Timestamps, and custom formats.
-         * @param {string | object} dateInput The date string or object from the backend.
-         * @returns {Date|null} A valid Date object or null if parsing fails.
-         */
-        function parseDate(dateInput) {
-            if (!dateInput) return null;
+    <!-- Printable Vehicle QR Code & Route Configuration -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+      <div class="card" style="text-align: center;">
+        <div style="font-weight: 700; margin-bottom: 4px;">Transit Vehicle QR</div>
+        <div id="qrVehicleSubtitle" style="font-size: 0.82rem; color: var(--text-muted);">VID-XXXX</div>
+        <div id="ownerQrBox" class="qr-box"></div>
+        <div style="display: flex; gap: 8px; margin-top: 10px;">
+          <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="downloadVehicleQR()">Download PNG</button>
+          <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="window.print()">Print QR</button>
+        </div>
+      </div>
 
-            // Handle Firestore Timestamp object
-            if (typeof dateInput === 'object' && dateInput.seconds) {
-                return new Date(dateInput.seconds * 1000);
-            }
-            
-            if (typeof dateInput !== 'string') return null;
+      <div class="card">
+        <div style="font-weight: 700; margin-bottom: 12px;">Route & Fare Management</div>
+        <div id="vehicleSaveAlert" class="alert-msg"></div>
+        <form onsubmit="saveVehicleConfig(event)">
+          <div class="input-group">
+            <label>Vehicle Number</label>
+            <input type="text" id="cfgVehicleNumber" class="input" required />
+          </div>
+          <div class="input-group">
+            <label>Route Name</label>
+            <input type="text" id="cfgRouteName" class="input" required />
+          </div>
+          <div class="input-group">
+            <label>Base Fare (₹)</label>
+            <input type="number" step="0.5" id="cfgBaseFare" class="input" required />
+          </div>
+          <button type="submit" class="btn">Update Vehicle Details</button>
+        </form>
+      </div>
+    </div>
 
-            // Standard ISO 8601 format (e.g., "2025-08-08T14:52:53.123Z") - Most reliable
-            let d = new Date(dateInput);
-            if (!isNaN(d)) return d;
+    <!-- Ticket Validation & Redemption Feed -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div style="font-weight: 700;">Issued Tickets & Redemptions</div>
+        <div style="display: flex; gap: 6px;">
+          <input type="text" id="manualTicketInput" class="input" placeholder="TK-XXXX" style="width: 140px; padding: 6px 10px;" />
+          <button class="btn btn-sm" onclick="verifyManualTicket()">Verify</button>
+        </div>
+      </div>
+      <div id="ownerTicketsList" style="font-size: 0.9rem; color: var(--text-muted);">Loading records...</div>
+    </div>
+  </div>
 
-            // Custom format (e.g., "8/5/2025, 2:52:53 AM")
-            const parts = dateInput.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}), (\d{1,2}):(\d{2}):(\d{2}) (AM|PM)/);
-            if (parts) {
-                const [, month, day, year, hour, minute, second, ampm] = parts.map((p, i) => (i > 0 && i < 7) ? parseInt(p, 10) : p);
-                
-                let hour24 = hour;
-                if (ampm.toUpperCase() === 'PM' && hour !== 12) {
-                    hour24 += 12;
-                } else if (ampm.toUpperCase() === 'AM' && hour === 12) { // Midnight case
-                    hour24 = 0;
-                }
-                return new Date(year, month - 1, day, hour24, minute, second);
-            }
-            
-            console.warn(`Could not parse date:`, dateInput);
-            return null;
-        }
+  <!-- Driver Ticket Scanner Modal -->
+  <div id="driverScannerModal" class="modal-overlay">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h3>Validate Passenger Ticket</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeDriverScanner()">✕</button>
+      </div>
+      <div id="driverQrReader" style="width: 100%; border-radius: 10px; overflow: hidden;"></div>
+      <div id="verifyResultBanner" class="alert-msg" style="margin-top: 14px; text-align: center; font-weight: 700;"></div>
+    </div>
+  </div>
 
-        /**
-         * Determines if a ticket is currently active.
-         * @param {object} ticket The ticket object from the API.
-         * @returns {boolean} True if the ticket is active, false otherwise.
-         */
-        function isTicketActive(ticket) {
-            if (!ticket || !ticket.expiresAt) return false;
-            const expiryDate = parseDate(ticket.expiresAt);
-            return expiryDate && new Date() < expiryDate;
-        }
-        
-        async function loadAnalytics() {
-            if (!currentOwnerId) return;
-            try {
-                console.log('🔄 Loading analytics...');
-                const response = await fetch(`${API_BASE_URL}/get-owner-tickets/${currentOwnerId}`);
-                if (!response.ok) {
-                    throw new Error(`API request failed with status ${response.status}`);
-                }
-                const allTickets = await response.json();
+  <script>
+    const token = localStorage.getItem('tickit_token');
+    if (!token) window.location.href = '/index.html';
 
-                if (!Array.isArray(allTickets)) {
-                    throw new Error("Invalid data format received from server.");
-                }
+    let currentVehicle = null;
+    let ownerTickets = [];
+    let driverScanner = null;
 
-                console.log(`📊 Processing ${allTickets.length} tickets for analytics`);
+    function authHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      };
+    }
 
-                const totalRevenue = allTickets.reduce((sum, ticket) => sum + (parseFloat(ticket.farePaid) || 0), 0);
-                
-                const now = new Date();
-                const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-                const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    async function loadOwnerDashboard() {
+      try {
+        const res = await fetch('/api/owner/vehicle', { headers: authHeaders() });
+        if (res.status === 401) return logout();
+        const data = await res.json();
+        currentVehicle = data.vehicle;
+        ownerTickets = data.tickets || [];
 
-                const todayTickets = allTickets.filter(ticket => {
-                    const ticketDate = parseDate(ticket.timestamp);
-                    return ticketDate && ticketDate >= todayStart && ticketDate <= todayEnd;
-                });
+        document.getElementById('ownerEarnings').textContent = `₹${parseFloat(data.stats.totalEarnings).toFixed(2)}`;
+        document.getElementById('ownerStatsSub').textContent = `${data.stats.totalTickets} Tickets • ${data.stats.totalPassengers} Passengers`;
 
-                const todayRevenue = todayTickets.reduce((sum, ticket) => sum + (parseFloat(ticket.farePaid) || 0), 0);
-                const validatedTodayRevenue = Math.min(todayRevenue, totalRevenue);
+        document.getElementById('cfgVehicleNumber').value = currentVehicle.vehicleNumber;
+        document.getElementById('cfgRouteName').value = currentVehicle.routeName;
+        document.getElementById('cfgBaseFare').value = currentVehicle.baseFare;
 
-                const activeTickets = allTickets.filter(isTicketActive);
-                const expiredTicketsCount = allTickets.length - activeTickets.length;
-                const uniquePassengers = new Set(allTickets.map(t => t.userId)).size;
+        updateOffDutyUI(currentVehicle.isOffDuty);
+        renderOwnerQR(currentVehicle);
+        renderOwnerTickets(ownerTickets);
+      } catch (e) {
+        console.error(e);
+      }
+    }
 
-                document.getElementById('todayRevenue').textContent = `₹${validatedTodayRevenue.toFixed(2)}`;
-                document.getElementById('activeTicketsCount').textContent = activeTickets.length;
-                document.getElementById('totalPassengers').textContent = uniquePassengers;
-                document.getElementById('totalTickets').textContent = allTickets.length;
-                document.getElementById('expiredTickets').textContent = expiredTicketsCount;
-                document.getElementById('totalEarnings').textContent = totalRevenue.toFixed(2);
-                
-                const revenuePerPassenger = uniquePassengers > 0 ? (totalRevenue / uniquePassengers).toFixed(2) : '0.00';
-                document.getElementById('avgDailyRevenue').textContent = validatedTodayRevenue.toFixed(2);
-                document.getElementById('revenuePerPassenger').textContent = revenuePerPassenger;
+    function updateOffDutyUI(isOffDuty) {
+      const toggle = document.getElementById('offDutyToggle');
+      const statusText = document.getElementById('dutyStatusText');
+      toggle.checked = !!isOffDuty;
+      if (isOffDuty) {
+        statusText.textContent = 'OFF-DUTY (PAUSED)';
+        statusText.style.color = '#f87171';
+      } else {
+        statusText.textContent = 'ACTIVE ON-DUTY';
+        statusText.style.color = '#10b981';
+      }
+    }
 
-                console.log('✅ Analytics loaded successfully');
+    async function toggleOffDuty(isOffDuty) {
+      const res = await fetch('/api/owner/status', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ isOffDuty })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        currentVehicle = data.vehicle;
+        updateOffDutyUI(currentVehicle.isOffDuty);
+      }
+    }
 
-            } catch (error) {
-                console.error('❌ Error loading analytics:', error);
-                resetAnalyticsToZero();
-                showSettingsMessage('Failed to load analytics data. ' + error.message, 'error');
-            }
-        }
+    function renderOwnerQR(vehicle) {
+      document.getElementById('qrVehicleSubtitle').textContent = `${vehicle.vehicleId} • ${vehicle.routeName}`;
+      const box = document.getElementById('ownerQrBox');
+      box.innerHTML = '';
+      const payload = JSON.stringify({
+        type: 'TICKIT_VEHICLE',
+        vehicleId: vehicle.vehicleId,
+        ownerId: vehicle.ownerId,
+        routeName: vehicle.routeName
+      });
+      new QRCode(box, {
+        text: payload,
+        width: 190,
+        height: 190
+      });
+    }
 
-        function resetAnalyticsToZero() {
-            document.getElementById('todayRevenue').textContent = '₹0';
-            document.getElementById('activeTicketsCount').textContent = '0';
-            document.getElementById('totalPassengers').textContent = '0';
-            document.getElementById('totalTickets').textContent = '0';
-            document.getElementById('expiredTickets').textContent = '0';
-            document.getElementById('totalEarnings').textContent = '0';
-            document.getElementById('avgDailyRevenue').textContent = '0';
-            document.getElementById('revenuePerPassenger').textContent = '0';
-        }
+    function downloadVehicleQR() {
+      const img = document.querySelector('#ownerQrBox img') || document.querySelector('#ownerQrBox canvas');
+      if (!img) return;
+      const url = img.src || img.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${currentVehicle.vehicleId}_QR.png`;
+      a.click();
+    }
 
-        function updateDebugPanel(debugInfo, allTickets, todayTickets) {
-            if (!debugMode) return;
-            const debugContent = document.getElementById('debugContent');
-            debugContent.innerHTML = `<pre>${JSON.stringify(debugInfo, null, 2)}</pre><hr><h6>Sample Tickets:</h6><pre>All Tickets Sample: ${JSON.stringify(allTickets.slice(0, 2), null, 2)}</pre><pre>Today's Tickets: ${JSON.stringify(todayTickets.slice(0, 2), null, 2)}</pre>`;
-        }
+    async function saveVehicleConfig(e) {
+      e.preventDefault();
+      const alertEl = document.getElementById('vehicleSaveAlert');
+      const payload = {
+        vehicleNumber: document.getElementById('cfgVehicleNumber').value,
+        routeName: document.getElementById('cfgRouteName').value,
+        baseFare: parseFloat(document.getElementById('cfgBaseFare').value)
+      };
+      const res = await fetch('/api/owner/vehicle', {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alertEl.textContent = data.error || 'Update failed.';
+        alertEl.className = 'alert-msg alert-error';
+        return;
+      }
+      currentVehicle = data.vehicle;
+      renderOwnerQR(currentVehicle);
+      alertEl.textContent = 'Vehicle details updated!';
+      alertEl.className = 'alert-msg alert-success';
+      setTimeout(() => { alertEl.className = 'alert-msg'; }, 2500);
+    }
 
-        function toggleDebug() {
-            debugMode = !debugMode;
-            document.getElementById('debugPanel').classList.toggle('show', debugMode);
-            if (debugMode) {
-                loadAnalytics();
-            }
-        }
+    // --- Driver Ticket Verification & Camera Scanner ---
+    function openDriverScanner() {
+      const banner = document.getElementById('verifyResultBanner');
+      banner.className = 'alert-msg';
+      banner.textContent = '';
+      document.getElementById('driverScannerModal').classList.add('open');
 
-        async function syncRevenue() {
-            if (!currentOwnerId) return;
-            try {
-                showSettingsMessage('Syncing revenue data...', 'info');
-                const response = await fetch(`${API_BASE_URL}/sync-owner-earnings/${currentOwnerId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                const data = await response.json();
-                if (data.success) {
-                    showSettingsMessage(`Revenue synced! Total: ₹${data.totalRevenue} from ${data.ticketCount} tickets`, 'success');
-                    setTimeout(() => {
-                        loadAnalytics();
-                        loadOwnerData();
-                    }, 1000);
-                } else {
-                    throw new Error(data.error || 'Unknown error during sync.');
-                }
-            } catch (error) {
-                console.error('Error syncing revenue:', error);
-                showSettingsMessage('Failed to sync revenue: ' + error.message, 'error');
-            }
-        }
+      driverScanner = new Html5Qrcode("driverQrReader");
+      driverScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 240, height: 240 } },
+        async (decodedText) => {
+          let ticketId = decodedText.trim();
+          try {
+            const parsed = JSON.parse(decodedText);
+            if (parsed.ticketId) ticketId = parsed.ticketId;
+          } catch (_) {}
+          await verifyTicketRequest(ticketId);
+        },
+        () => {}
+      ).catch(err => console.warn("Driver scanner camera error:", err));
+    }
 
-        async function updateSettings() {
-            if (!currentOwnerId) return;
-            const fare = parseInt(document.getElementById('fareInput').value);
-            const validity = parseInt(document.getElementById('validityInput').value);
+    function closeDriverScanner() {
+      document.getElementById('driverScannerModal').classList.remove('open');
+      if (driverScanner) {
+        driverScanner.stop().then(() => driverScanner.clear()).catch(() => {});
+        driverScanner = null;
+      }
+    }
 
-            if (isNaN(fare) || fare < 1 || fare > 1000) {
-                return showSettingsMessage('Fare must be between ₹1 and ₹1000', 'error');
-            }
-            if (isNaN(validity) || validity < 5 || validity > 120) {
-                return showSettingsMessage('Validity must be between 5 and 120 minutes', 'error');
-            }
+    async function verifyManualTicket() {
+      const tid = document.getElementById('manualTicketInput').value.trim().toUpperCase();
+      if (!tid) return;
+      const res = await fetch('/api/tickets/verify', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ ticketId: tid })
+      });
+      const data = await res.json();
+      alert(`${data.badge}: ${data.message || data.error}`);
+      loadOwnerDashboard();
+    }
 
-            try {
-                const response = await fetch(`${API_BASE_URL}/update-owner-settings`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        ownerId: currentOwnerId,
-                        fixedFare: fare,
-                        ticketValidityMinutes: validity
-                    })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    showSettingsMessage('Settings updated successfully!', 'success');
-                    setTimeout(loadAnalytics, 1000);
-                } else {
-                    throw new Error(data.error || 'Failed to update settings');
-                }
-            } catch (error) {
-                console.error('Error updating settings:', error);
-                showSettingsMessage('Failed to update settings: ' + error.message, 'error');
-            }
-        }
+    async function verifyTicketRequest(ticketId) {
+      const banner = document.getElementById('verifyResultBanner');
+      const res = await fetch('/api/tickets/verify', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ ticketId })
+      });
+      const data = await res.json();
+      if (res.ok && data.valid) {
+        banner.textContent = `✅ ${data.badge} — ${data.message}`;
+        banner.className = 'alert-msg alert-success';
+      } else {
+        banner.textContent = `❌ ${data.badge || 'REJECTED'} — ${data.error}`;
+        banner.className = 'alert-msg alert-error';
+      }
+      await loadOwnerDashboard();
+    }
 
-        async function showTickets(status, event) {
-            if (event) {
-                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-                event.target.classList.add('active');
-            }
-            const displayElement = document.getElementById('ticketsDisplay');
-            displayElement.innerHTML = '<div class="loading">Loading tickets...</div>';
+    function renderOwnerTickets(tickets) {
+      const container = document.getElementById('ownerTicketsList');
+      if (!tickets.length) {
+        container.innerHTML = '<p>No passenger tickets issued yet.</p>';
+        return;
+      }
+      container.innerHTML = tickets.map(t => `
+        <div class="list-item">
+          <div>
+            <div style="font-weight: 700;">${t.ticketId} • ${t.passengerCount} Passenger(s)</div>
+            <div style="font-size: 0.76rem; color: var(--text-muted);">Issued: ${new Date(t.issuedAt).toLocaleString()}</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-weight: 700;">₹${parseFloat(t.farePaid).toFixed(2)}</div>
+            <span class="badge badge-${t.status.toLowerCase()}">${t.status}</span>
+          </div>
+        </div>
+      `).join('');
+    }
 
-            try {
-                const response = await fetch(`${API_BASE_URL}/get-owner-tickets/${currentOwnerId}`);
-                if (!response.ok) {
-                    throw new Error(`API request failed: ${response.statusText}`);
-                }
-                const allTickets = await response.json();
-                if (!Array.isArray(allTickets)) {
-                    throw new Error("Invalid ticket data from server.");
-                }
-                
-                let ticketsToShow;
-                if (status === 'active') {
-                    ticketsToShow = allTickets.filter(isTicketActive);
-                } else if (status === 'expired') {
-                    ticketsToShow = allTickets.filter(ticket => !isTicketActive(ticket));
-                } else {
-                    ticketsToShow = allTickets;
-                }
+    // --- One-Click CSV Export ---
+    function exportEarningsCSV() {
+      let csv = 'Ticket ID,Passengers,Fare Paid,Status,Issued At\n';
+      ownerTickets.forEach(t => {
+        csv += `${t.ticketId},${t.passengerCount},${t.farePaid},${t.status},${t.issuedAt}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('href', url);
+      a.setAttribute('download', `TickIT_Report_${new Date().toISOString().slice(0,10)}.csv`);
+      a.click();
+    }
 
-                currentTickets = ticketsToShow;
-                displayTickets(ticketsToShow, status);
+    function logout() {
+      localStorage.removeItem('tickit_token');
+      localStorage.removeItem('tickit_user');
+      window.location.href = '/index.html';
+    }
 
-            } catch (error) {
-                console.error('Error loading tickets:', error);
-                displayElement.innerHTML = `<div class="error-message">Failed to load tickets: ${error.message}</div>`;
-            }
-        }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
 
-        function displayTickets(tickets, status) {
-            const displayElement = document.getElementById('ticketsDisplay');
-            if (!tickets || tickets.length === 0) {
-                displayElement.innerHTML = `<div class="empty-state"><h4>No ${status} tickets found</h4><p>Tickets will appear here once passengers start using your vehicle</p></div>`;
-                return;
-            }
-
-            const totalRevenue = tickets.reduce((sum, ticket) => sum + (parseFloat(ticket.farePaid) || 0), 0);
-            const uniquePassengers = new Set(tickets.map(t => t.userId)).size;
-
-            displayElement.innerHTML = `
-                <div class="tickets-stats">
-                    <h4>${status.charAt(0).toUpperCase() + status.slice(1)} tickets overview</h4>
-                    <div class="stats-grid">
-                        <div class="stat-item"><div class="stat-value">${tickets.length}</div><div class="stat-label">Total Tickets</div></div>
-                        <div class="stat-item"><div class="stat-value">₹${totalRevenue.toFixed(2)}</div><div class="stat-label">Total Revenue</div></div>
-                        <div class="stat-item"><div class="stat-value">${uniquePassengers}</div><div class="stat-label">Unique Passengers</div></div>
-                        <div class="stat-item"><div class="stat-value">₹${uniquePassengers > 0 ? (totalRevenue / uniquePassengers).toFixed(2) : '0.00'}</div><div class="stat-label">Avg per Passenger</div></div>
-                    </div>
-                </div>
-                <div class="tickets-list">${tickets.map(createTicketHTML).join('')}</div>`;
-        }
-
-        function createTicketHTML(ticket) {
-            const purchaseDate = parseDate(ticket.timestamp)?.toLocaleString() || 'Unknown date';
-            const expiryDate = parseDate(ticket.expiresAt)?.toLocaleString() || 'No expiry set';
-            const isActive = isTicketActive(ticket);
-
-            return `
-                <div class="ticket-item ${isActive ? 'active-ticket' : 'expired-ticket'}">
-                    <div class="ticket-info">
-                        <div class="passenger-info">
-                            <strong>${ticket.userName || 'Unknown Passenger'}</strong>
-                            <small>${ticket.userEmail || 'No email provided'}</small>
-                        </div>
-                        <div class="ticket-details">
-                            <p><strong>Ticket ID:</strong> <span class="mono">#${ticket.ticketId ? ticket.ticketId.substring(0, 8).toUpperCase() : 'N/A'}</span></p>
-                            <p><strong>Fare paid:</strong> <span style="font-weight:700">₹${parseFloat(ticket.farePaid || 0).toFixed(2)}</span></p>
-                            <p><strong>Purchased:</strong> ${purchaseDate}</p>
-                            <p><strong>Expires:</strong> ${expiryDate}</p>
-                            <p><strong>Status:</strong> <span class="status ${isActive ? 'active' : 'expired'}">${isActive ? 'ACTIVE' : 'EXPIRED'}</span></p>
-                        </div>
-                    </div>
-                </div>`;
-        }
-
-        async function loadOwnerData() {
-            if (!currentOwnerId) return;
-            try {
-                const response = await fetch(`${API_BASE_URL}/get-owner-details/${currentOwnerId}`);
-                const ownerData = await response.json();
-                if (ownerData.error) {
-                    throw new Error(ownerData.error);
-                }
-                document.getElementById('ownerName').textContent = ownerData.fullName || 'Owner';
-                document.getElementById('vehicleId').textContent = `Vehicle: ${ownerData.vehicleId || 'N/A'}`;
-                if (ownerData.fixedFare) {
-                    document.getElementById('fareInput').value = ownerData.fixedFare;
-                }
-                if (ownerData.ticketValidityMinutes) {
-                    document.getElementById('validityInput').value = ownerData.ticketValidityMinutes;
-                }
-            } catch (error) {
-                console.error('Error loading owner data:', error);
-                document.getElementById('ownerName').textContent = 'Error loading data';
-            }
-        }
-
-        function showSettingsMessage(message, type) {
-            const messageElement = document.getElementById('settingsMessage');
-            const className = type === 'error' ? 'error-message' : type === 'info' ? 'warning-message' : 'success-message';
-            messageElement.innerHTML = `<div class="${className}">${message}</div>`;
-            setTimeout(() => { messageElement.innerHTML = ''; }, 5000);
-        }
-
-        function logout() {
-            console.log('Logging out...');
-            localStorage.removeItem('ownerId');
-            localStorage.removeItem('ownerToken');
-            localStorage.removeItem('userType');
-            window.location.href = '/index.html';
-        }
-
-        // --- PUSH NOTIFICATION FUNCTIONS ---
-
-        function requestNotificationPermission() {
-            if (!("Notification" in window)) {
-                console.log("This browser does not support desktop notification");
-            } else if (Notification.permission === "granted") {
-                console.log("Notification permission already granted.");
-            } else if (Notification.permission !== "denied") {
-                Notification.requestPermission().then(permission => {
-                    if (permission === "granted") {
-                        console.log("Notification permission granted.");
-                        showNotification("Notifications Enabled!", "You will now receive updates for new tickets.");
-                    }
-                });
-            }
-        }
-
-        function showNotification(title, body) {
-            if (Notification.permission === "granted") {
-                const notification = new Notification(title, {
-                    body: body,
-                    icon: '/favicon.ico' // Optional: Add an icon
-                });
-                playNotificationSound();
-            }
-        }
-        
-        function playNotificationSound() {
-            const audio = new Audio('/preview.mp3');
-            audio.play();
-        }
-
-        async function checkForNewTickets() {
-            if (!currentOwnerId) return;
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/get-owner-tickets/${currentOwnerId}`);
-                const tickets = await response.json();
-                
-                if (Array.isArray(tickets)) {
-                    if (lastKnownTicketCount > 0 && tickets.length > lastKnownTicketCount) {
-                        const newTicket = tickets[0]; // Assuming newest is first
-                        showNotification("New ticket purchased", `Passenger: ${newTicket.userName}\nFare: ₹${newTicket.farePaid}`);
-                    }
-                    lastKnownTicketCount = tickets.length;
-                }
-            } catch (error) {
-                console.error("Error checking for new tickets:", error);
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            if (currentOwnerId) {
-                console.log('🚀 Initializing owner dashboard...');
-                requestNotificationPermission(); // Request permission on load
-                try {
-                    await loadOwnerData();
-                    await loadAnalytics();
-                    await showTickets('active');
-                    
-                    const activeButton = document.querySelector('.tab-button[onclick*="active"]');
-                    if (activeButton) activeButton.classList.add('active');
-
-                    setInterval(() => {
-                        console.log('Auto-refreshing data...');
-                        loadAnalytics();
-                        checkForNewTickets(); // Check for new tickets
-                        const activeTab = document.querySelector('.tab-button.active');
-                        if (activeTab) {
-                            const status = activeTab.getAttribute('onclick').match(/'(.*?)'/)[1];
-                            showTickets(status);
-                        }
-                    }, 30000); // Check every 30 seconds
-                } catch (error) {
-                    console.error("Dashboard initialization failed:", error);
-                    document.getElementById('ticketsDisplay').innerHTML = `<div class="error-message">Dashboard failed to load: ${error.message}</div>`;
-                }
-            }
-        });
-
-        document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey || e.metaKey) {
-                switch (e.key) {
-                    case '1':
-                        e.preventDefault();
-                        document.querySelector('.tab-button[onclick*="\'active\'"]').click();
-                        break;
-                    case '2':
-                        e.preventDefault();
-                        document.querySelector('.tab-button[onclick*="\'expired\'"]').click();
-                        break;
-                    case '3':
-                        e.preventDefault();
-                        document.querySelector('.tab-button[onclick*="\'all\'"]').click();
-                        break;
-                }
-            }
-        });
-    </script>
+    loadOwnerDashboard();
+  </script>
 </body>
 </html>
